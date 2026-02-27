@@ -1,0 +1,43 @@
+Package: activecampaignr
+Title: Tidy Interface to the ActiveCampaign API v3
+Version: 0.1.0
+Authors@R:
+    person("Peeyoosh", "Chandra", role = c("aut", "cre"),
+           email = "peeyoosh@mrhq.co.nz")
+Description: A tidy, cached, and MCP-ready R client for the ActiveCampaign CRM
+    API v3. Provides functions for deals, contacts, accounts, campaigns, tags,
+    automations, and more. Features automatic pagination, rate limiting,
+    incremental sync with RDS caching, and an MCP server for AI assistant
+    integration via 'mcptools'.
+License: MIT + file LICENSE
+URL: https://github.com/peeyooshchandra/activecampaignr
+BugReports: https://github.com/peeyooshchandra/activecampaignr/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    cli,
+    dplyr,
+    glue,
+    httr2,
+    janitor,
+    purrr,
+    rlang,
+    tibble,
+    tidyr
+Suggests:
+    config,
+    future,
+    httptest2,
+    knitr,
+    mcptools,
+    officer,
+    progressr,
+    rmarkdown,
+    shiny,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Depends:
+    R (>= 4.1.0)

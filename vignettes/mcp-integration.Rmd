@@ -1,0 +1,86 @@
+---
+title: "MCP Integration for AI Assistants"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{MCP Integration for AI Assistants}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+## Overview
+
+activecampaignr includes an MCP (Model Context Protocol) server that
+exposes your ActiveCampaign data as tools for AI assistants like Claude.
+This uses the [mcptools](https://github.com/posit-dev/mcptools) package.
+
+## Setup
+
+### 1. Install mcptools
+
+```{r}
+install.packages("mcptools")
+```
+
+### 2. Configure Claude Code
+
+Add to your `~/.claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "activecampaign": {
+      "command": "Rscript",
+      "args": ["-e", "activecampaignr::ac_auth_from_env(); activecampaignr::ac_mcp_server()"]
+    }
+  }
+}
+```
+
+Make sure `ACTIVECAMPAIGN_URL` and `ACTIVECAMPAIGN_API_KEY` are set in
+your environment.
+
+### 3. Start Using
+
+Once configured, Claude can:
+
+- **Search deals**: "Show me all won deals this month"
+- **Look up contacts**: "Find the contact with email user@example.com"
+- **Create deals**: "Create a new deal for Jane Doe, $5000"
+- **Check pipelines**: "What are the current pipeline stages?"
+- **View custom fields**: "What custom fields does deal 12345 have?"
+
+## Available Tools
+
+The MCP server exposes these tools:
+
+| Tool | Description |
+|------|-------------|
+| `ac_deals` | Search and list deals with filters |
+| `ac_deal` | Get a single deal by ID |
+| `ac_create_deal` | Create a new deal |
+| `ac_update_deal` | Update deal fields |
+| `ac_contacts` | Search and list contacts |
+| `ac_contact` | Get a single contact |
+| `ac_create_contact` | Create a new contact |
+| `ac_tags` | List tags |
+| `ac_deal_custom_fields_wide` | Deal custom fields in wide format |
+| `ac_deal_pipelines` | List pipelines |
+| `ac_deal_stages` | List stages |
+| `ac_users` | List team members |
+| `ac_automations` | List automations |
+
+## Running the Server Manually
+
+For testing, you can start the server in an R session:
+
+```{r}
+library(activecampaignr)
+ac_auth_from_env()
+ac_mcp_server()
+```
+
+This starts an stdio-based MCP server that listens for JSON-RPC messages.
