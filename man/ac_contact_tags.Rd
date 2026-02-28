@@ -10,8 +10,12 @@ ac_contact_tags(contact_id)
 \item{contact_id}{Contact ID}
 }
 \value{
-A tibble of tags
+A tibble with columns \code{contact_id}, \code{tag_id}, \code{tag_name}, and
+\code{contact_tag_id} (the association ID, used by \code{\link[=ac_remove_tag]{ac_remove_tag()}})
 }
 \description{
 Manage tags on contacts.
+
+Returns a tibble with tag names resolved. The raw API only returns tag IDs;
+this function automatically joins against \code{\link[=ac_tags]{ac_tags()}} to include tag names.
 }
