@@ -1,6 +1,6 @@
 Package: activecampaignr
 Title: Tidy Interface to the ActiveCampaign API v3
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Peeyoosh", "Chandra", role = c("aut", "cre"),
            email = "pc@strategyandops.co")

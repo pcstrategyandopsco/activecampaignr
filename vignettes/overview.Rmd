@@ -1,0 +1,108 @@
+---
+title: "Vignette Overview"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+This page provides a guided tour of the activecampaignr vignettes. Each one
+is self-contained, but they build on each other in a logical order.
+
+## 1. Getting Started
+
+**[Getting Started with activecampaignr](getting-started.html)** covers
+authentication, your first API call, and basic data retrieval. Start here
+if you are new to the package.
+
+| Topic | What you will learn |
+|---|---|
+| Authentication | `ac_auth()` and `ac_auth_from_env()` setup |
+| Fetching data | `ac_deals()`, `ac_contacts()`, filtering and search |
+| Custom fields | Wide-format pivot with `ac_deal_custom_fields_wide()` |
+| Convenience joins | `ac_deals_full()` for a single ready-to-analyse tibble |
+
+## 2. Caching and Incremental Sync
+
+**[Caching and Incremental Sync](caching-and-sync.html)** explains how to
+avoid redundant API calls in production workflows.
+
+| Topic | What you will learn |
+|---|---|
+| Three-tier strategy | When to use `ac_sync_deals()` vs `ac_deals()` vs `ac_cache_path()` |
+| Incremental sync | Fetch only records modified since your last sync |
+| Parallel sync | Run `ac_sync_deals()` and `ac_sync_contacts()` with future |
+| Gotchas | Deleted records, TTL behaviour, multi-account setups |
+| Cache management | When and how to flush with `ac_cache_clear()` |
+
+## 3. MCP Integration for AI Assistants
+
+**[MCP Integration](mcp-integration.html)** shows how to expose your CRM
+as tools for AI assistants like Claude.
+
+| Topic | What you will learn |
+|---|---|
+| MCP server setup | `ac_mcp_server()` configuration |
+| Available tools | Which functions are exposed and how AI assistants call them |
+| Security | Scoping access for read-only or read-write use |
+
+## 4. Pipeline Analysis with officer
+
+**[Pipeline Analysis](pipeline-analysis.html)** walks through building a
+PowerPoint pipeline report with native editable charts.
+
+| Topic | What you will learn |
+|---|---|
+| mschart | Bar charts, line charts that recipients can edit in PowerPoint |
+| ggplot fallback | When to use `dml(ggobj = ...)` for complex visualisations |
+| officer assembly | Title slides, chart slides, summary tables |
+| Output | A `.pptx` file ready for stakeholders |
+
+## 5. Advertising Effectiveness Analysis
+
+**[Ad Effectiveness](ad-effectiveness.html)** is the most detailed analysis
+vignette. It correlates advertising spend with sales outcomes.
+
+| Topic | What you will learn |
+|---|---|
+| Cost per lead / cost per sale | Daily and weekly CPL and CPS |
+| Pipeline velocity | How long leads take to convert |
+| Windowed attribution | Lagging spend by median velocity for fairer comparison |
+| Per-deal attribution | Attributing each sale to the spend on the day its lead was created |
+| Lag correlation | Optimal spend-to-sales lag across 0-12 weeks |
+
+## 6. Interactive Deal Dashboard with Shiny
+
+**[Shiny Deal Dashboard](shiny-deal-dashboard.html)** provides a template
+for an interactive deal explorer.
+
+| Topic | What you will learn |
+|---|---|
+| Filters | Pipeline, owner, date range, status |
+| Live sync | Refresh data from the API within the app |
+| Deployment | Running the bundled app from `inst/shiny-examples/` |
+
+## 7. Campaign ROI Report with officer
+
+**[Campaign ROI](campaign-roi.html)** builds a branded Word document
+summarising campaign performance.
+
+| Topic | What you will learn |
+|---|---|
+| Campaign metrics | Open rates, click rates, revenue attribution |
+| officer for Word | Styled tables and paragraphs in `.docx` output |
+| Automation | Generating reports on a schedule |
+
+## Suggested reading order
+
+If you are new to activecampaignr, work through them in this order:
+
+1. Getting Started (required)
+2. Caching and Incremental Sync (recommended for production use)
+3. One analysis vignette that matches your use case (4, 5, 6, or 7)
+4. MCP Integration (if using AI assistants)

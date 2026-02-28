@@ -7,8 +7,8 @@ template:
 
 navbar:
   structure:
-    left: [intro, reference]
-    right: [articles, search, github]
+    left: [intro, reference, articles]
+    right: [search, github]
   components:
     github:
       icon: fa-github
@@ -16,6 +16,10 @@ navbar:
       aria-label: GitHub
 
 articles:
+- title: Overview
+  contents:
+  - overview
+
 - title: Getting Started
   contents:
   - getting-started
