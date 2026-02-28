@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 ```{r}
 # Install from GitHub
 # install.packages("pak")
-pak::pak("peeyooshchandra/activecampaignr")
+pak::pak("pcstrategyandopsco/activecampaignr")
 ```
 
 ## Authentication

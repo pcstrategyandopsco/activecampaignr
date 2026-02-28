@@ -21,7 +21,7 @@ ac_request <- function(endpoint, method = "GET", body = NULL, query = NULL) {
 
   req <- httr2::request(url) |>
     httr2::req_headers("Api-Token" = the$api_key) |>
-    httr2::req_user_agent("activecampaignr (https://github.com/peeyooshchandra/activecampaignr)") |>
+    httr2::req_user_agent("activecampaignr (https://github.com/pcstrategyandopsco/activecampaignr)") |>
     httr2::req_throttle(rate = 4 / 1) |>
     httr2::req_retry(max_tries = 3, backoff = ~ 2) |>
     httr2::req_method(method)

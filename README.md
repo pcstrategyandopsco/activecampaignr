@@ -1,11 +1,24 @@
 # activecampaignr
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/peeyooshchandra/activecampaignr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/peeyooshchandra/activecampaignr/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
 A **tidy**, **cached**, and **MCP-ready** R client for the [ActiveCampaign API v3](https://developers.activecampaign.com/reference/overview).
+
+## Why This Package?
+
+This package builds on the foundation laid by [`ractivecampaign`](https://github.com/rwColumn/ractivecampaign), which pioneered R access to the ActiveCampaign API. We're grateful for that work — it proved the value of an R-native AC client and informed many of the patterns used here.
+
+However, production use at scale revealed gaps that warranted a ground-up rebuild:
+
+- **Broader API coverage** — `ractivecampaign` covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks
+- **Automatic pagination** — Fetching thousands of records shouldn't require manual offset loops
+- **Caching and incremental sync** — Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes
+- **Modern HTTP backend** — Built on httr2 with native rate limiting (`req_throttle`) and retry with exponential backoff (`req_retry`), replacing manual `Sys.sleep()` and `retry()` calls
+- **Custom field pivot** — ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field)
+- **MCP integration** — Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data
+- **Write operations** — Full CRUD (create, read, update, delete) for all entities, not just read
 
 ## Features
 
@@ -23,7 +36,7 @@ A **tidy**, **cached**, and **MCP-ready** R client for the [ActiveCampaign API v
 ```r
 # Install from GitHub
 # install.packages("pak")
-pak::pak("peeyooshchandra/activecampaignr")
+pak::pak("pcstrategyandopsco/activecampaignr")
 ```
 
 ## Quick Start
@@ -50,21 +63,6 @@ result <- ac_sync_deals()
 deals <- result$deals
 ```
 
-## vs ractivecampaign
-
-| Feature | ractivecampaign | activecampaignr |
-|---------|----------------|-----------------|
-| API coverage | Deals, contacts | Deals, contacts, accounts, campaigns, tasks, tags, lists, automations, webhooks |
-| Output format | Data frames | Tidy tibbles (snake_case, proper types) |
-| Pagination | Manual | Automatic |
-| Rate limiting | Manual `Sys.sleep()` | Built-in `req_throttle()` |
-| Retry logic | Manual `retry()` | Built-in `req_retry()` with backoff |
-| Caching | None | RDS with TTL + incremental merge |
-| Custom fields | Long format only | Long + wide format pivot |
-| HTTP backend | httr | httr2 |
-| MCP support | No | Yes (via mcptools) |
-| Write operations | Limited | Full CRUD for all entities |
-
 ## Vignettes
 
 - [Getting Started](vignettes/getting-started.Rmd) — Auth, first API call, caching
@@ -73,6 +71,10 @@ deals <- result$deals
 - [Pipeline Analysis](vignettes/pipeline-analysis.Rmd) — Win rates, velocity, PowerPoint reports
 - [Shiny Deal Dashboard](vignettes/shiny-deal-dashboard.Rmd) — Interactive deal explorer
 - [Campaign ROI](vignettes/campaign-roi.Rmd) — Campaign performance Word report
+
+## Acknowledgements
+
+This package was inspired by and builds on the work of [`ractivecampaign`](https://github.com/rwColumn/ractivecampaign). Thank you for making ActiveCampaign accessible to the R community.
 
 ## License
 
