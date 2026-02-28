@@ -95,25 +95,23 @@ which week’s sales</li>
 <h2 id="step-1-pull-deal-data">Step 1: Pull Deal Data<a class="anchor" aria-label="anchor" href="#step-1-pull-deal-data"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Fetch deals with dates properly typed</span></span>
+<code class="sourceCode R"><span><span class="co"># Fetch deals — cdate/mdate are already POSIXct, value is already numeric</span></span>
 <span><span class="va">deals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_deals.html">ac_deals</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># We need: deal ID, created date, won date, status, value</span></span>
-<span><span class="co"># cdate and mdate are already POSIXct thanks to ac_coerce_types()</span></span>
-<span><span class="co"># status: 0 = open, 1 = won, 2 = lost</span></span>
-<span></span>
+<span><span class="co"># Select the columns we need</span></span>
+<span><span class="co"># status is returned as character: "0" = open, "1" = won, "2" = lost</span></span>
 <span><span class="va">deal_dates</span> <span class="op">&lt;-</span> <span class="va">deals</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
 <span>    deal_id <span class="op">=</span> <span class="va">id</span>,</span>
 <span>    created <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="va">cdate</span><span class="op">)</span>,</span>
 <span>    closed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="va">mdate</span><span class="op">)</span>,</span>
-<span>    status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">status</span><span class="op">)</span>,</span>
-<span>    value <span class="op">=</span> <span class="va">value</span>  <span class="co"># already numeric</span></span>
+<span>    status <span class="op">=</span> <span class="va">status</span>,</span>
+<span>    value <span class="op">=</span> <span class="va">value</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Won deals with velocity</span></span>
 <span><span class="va">won</span> <span class="op">&lt;-</span> <span class="va">deal_dates</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"1"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    days_to_close <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">closed</span> <span class="op">-</span> <span class="va">created</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
@@ -224,6 +222,8 @@ effects and small sample sizes.</p>
 <span>    x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Cost ($)"</span>, colour <span class="op">=</span> <span class="cn">NULL</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><em>Example output (synthetic data):</em></p>
+<p><img src="figures/weekly_cpl_cps.png" class="r-plt" alt="" width="100%"></p>
 </div>
 </div>
 <div class="section level2">
@@ -257,16 +257,24 @@ then this week’s sales were driven by ad spend from 3 weeks ago.</p>
 <span>    x <span class="op">=</span> <span class="st">"Days from Created to Won"</span>, y <span class="op">=</span> <span class="st">"Deals"</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><em>Example output (synthetic data):</em></p>
+<p><img src="figures/velocity_distribution.png" class="r-plt" alt="" width="100%"></p>
 </div>
 <div class="section level2">
-<h2 id="step-6-windowed-attribution">Step 6: Windowed Attribution<a class="anchor" aria-label="anchor" href="#step-6-windowed-attribution"></a>
+<h2 id="step-6a-windowed-attribution-aggregate">Step 6a: Windowed Attribution (Aggregate)<a class="anchor" aria-label="anchor" href="#step-6a-windowed-attribution-aggregate"></a>
 </h2>
-<p>The key insight: today’s ad spend generates leads today, but those
-leads close weeks or months later. Naive CPL/CPS (same-day spend vs
-same-day sales) conflates cause and effect.</p>
-<p>Windowed attribution shifts the spend data back by the median
-velocity, so you’re comparing the spend that <em>created</em> leads with
-the sales those leads <em>eventually</em> produced.</p>
+<p>Naive CPS divides this week’s spend by this week’s sales. But if your
+median velocity is 3 weeks, this week’s sales were actually driven by
+spend from 3 weeks ago. This matters when spend varies over time.</p>
+<p>Consider a campaign burst: you double your ad budget in March. Naive
+CPS spikes in March (high spend, same number of sales closing). Windowed
+CPS stays flat in March but spikes 3 weeks later, when the leads
+generated by that burst actually close. This gives you a more accurate
+picture of what each sale really cost.</p>
+<p>If your spend is steady week-to-week, the two lines will overlap
+because <code>lag(spend, 3)</code> ≈ <code>spend</code>. The divergence
+only appears when spend has meaningful variation (campaign bursts,
+budget changes, seasonal ramps).</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lag_weeks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">won</span><span class="op">$</span><span class="va">days_to_close</span><span class="op">)</span> <span class="op">/</span> <span class="fl">7</span><span class="op">)</span></span>
 <span></span>
@@ -304,6 +312,124 @@ the sales those leads <em>eventually</em> produced.</p>
 <span>    x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Cost per Sale ($)"</span>, colour <span class="op">=</span> <span class="cn">NULL</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><em>Example output (synthetic data with campaign bursts in March and
+September):</em></p>
+<p><img src="figures/naive_vs_windowed.png" class="r-plt" alt="" width="100%"></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="step-6b-per-deal-attribution">Step 6b: Per-Deal Attribution<a class="anchor" aria-label="anchor" href="#step-6b-per-deal-attribution"></a>
+</h2>
+<p>The windowed approach above is an aggregate approximation. For more
+precise attribution, work at the deal level: for each won deal, look up
+the ad spend on the day that deal was <em>created</em>, then divide by
+the number of leads created that same day. This gives each deal its own
+attributed acquisition cost.</p>
+<pre><code>Deal 1042: created 10 Mar, closed 2 Apr (23 days)
+  Ad spend on 10 Mar: $280
+  Leads created on 10 Mar: 4
+  → Attributed cost for deal 1042: $280 / 4 = $70</code></pre>
+<p>This method handles uneven spend naturally. A deal created during a
+campaign burst gets a higher attributed cost than one created on a quiet
+day, regardless of when it closes.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># For each won deal, look up spend on the day it was created</span></span>
+<span><span class="va">won_attributed</span> <span class="op">&lt;-</span> <span class="va">won</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
+<span>    <span class="va">daily</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">date</span>, daily_spend <span class="op">=</span> <span class="va">spend</span>, daily_leads <span class="op">=</span> <span class="va">leads</span><span class="op">)</span>,</span>
+<span>    by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"created"</span> <span class="op">=</span> <span class="st">"date"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    <span class="co"># This deal's share of that day's spend</span></span>
+<span>    attributed_cost <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span></span>
+<span>      <span class="va">daily_leads</span> <span class="op">&gt;</span> <span class="fl">0</span>,</span>
+<span>      <span class="va">daily_spend</span> <span class="op">/</span> <span class="va">daily_leads</span>,</span>
+<span>      <span class="cn">NA_real_</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Summary: what did each sale actually cost to acquire?</span></span>
+<span><span class="va">won_attributed</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">attributed_cost</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
+<span>    deals <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    median_cost <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">attributed_cost</span><span class="op">)</span>,</span>
+<span>    mean_cost <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">attributed_cost</span><span class="op">)</span>,</span>
+<span>    p25 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">attributed_cost</span>, <span class="fl">0.25</span><span class="op">)</span>,</span>
+<span>    p75 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">attributed_cost</span>, <span class="fl">0.75</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="compare-naive-vs-per-deal-cps-over-time">Compare naive vs per-deal CPS over time<a class="anchor" aria-label="anchor" href="#compare-naive-vs-per-deal-cps-over-time"></a>
+</h3>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Monthly comparison</span></span>
+<span><span class="va">monthly_attributed</span> <span class="op">&lt;-</span> <span class="va">won_attributed</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>month <span class="op">=</span> <span class="fu">floor_date</span><span class="op">(</span><span class="va">closed</span>, <span class="st">"month"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">month</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
+<span>    avg_attributed_cps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">attributed_cost</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">monthly_naive</span> <span class="op">&lt;-</span> <span class="va">daily</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>month <span class="op">=</span> <span class="fu">floor_date</span><span class="op">(</span><span class="va">date</span>, <span class="st">"month"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">month</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>spend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">spend</span><span class="op">)</span>, sales <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">sales</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>naive_cps <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">sales</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="va">spend</span> <span class="op">/</span> <span class="va">sales</span>, <span class="cn">NA_real_</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">monthly_attributed</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">monthly_naive</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">month</span>, <span class="va">naive_cps</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">month</span>, `Naive CPS` <span class="op">=</span> <span class="va">naive_cps</span>, `Per-Deal CPS` <span class="op">=</span> <span class="va">avg_attributed_cps</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span><span class="op">-</span><span class="va">month</span>, names_to <span class="op">=</span> <span class="st">"method"</span>, values_to <span class="op">=</span> <span class="st">"cost"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">month</span>, <span class="va">cost</span>, colour <span class="op">=</span> <span class="va">method</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="va"><a href="https://scales.r-lib.org/reference/dollar_format.html" class="external-link">dollar</a></span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"Monthly Cost per Sale: Naive vs Per-Deal Attribution"</span>,</span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Per-deal attributes each sale to spend on the day its lead was created"</span>,</span>
+<span>    x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Cost per Sale ($)"</span>, colour <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><em>Example output (synthetic data with campaign bursts in March and
+September):</em></p>
+<p><img src="figures/per_deal_attribution.png" class="r-plt" alt="" width="100%"></p>
+</div>
+<div class="section level3">
+<h3 id="which-method-to-use">Which method to use?<a class="anchor" aria-label="anchor" href="#which-method-to-use"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Method</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Naive (same-period)</td>
+<td>Simple, no assumptions</td>
+<td>Conflates cause and effect</td>
+</tr>
+<tr class="even">
+<td>Windowed (lagged)</td>
+<td>Accounts for velocity</td>
+<td>Uses median lag for all deals; loses deal-level detail</td>
+</tr>
+<tr class="odd">
+<td>Per-deal attribution</td>
+<td>Most accurate; handles variable spend and velocity</td>
+<td>Requires deal-level created dates; assumes all leads come from paid
+ads</td>
+</tr>
+</tbody>
+</table>
+<p>For most teams, start with per-deal attribution. Fall back to
+windowed if you don’t have reliable deal creation dates.</p>
 </div>
 </div>
 <div class="section level2">
@@ -311,7 +437,7 @@ the sales those leads <em>eventually</em> produced.</p>
 </h2>
 <p>Test which lag window produces the strongest correlation between
 spend and sales. This helps validate your assumed velocity.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Test lags from 0 to 12 weeks</span></span>
 <span><span class="va">lag_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>lag_weeks <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">12</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -325,7 +451,7 @@ spend and sales. This helps validate your assumed velocity.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">best_lag</span> <span class="op">&lt;-</span> <span class="va">lag_test</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_max</a></span><span class="op">(</span><span class="va">correlation</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">lag_test</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">lag_weeks</span>, <span class="va">correlation</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"#2c7fb8"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span></span>
@@ -341,11 +467,13 @@ spend and sales. This helps validate your assumed velocity.</p>
 <span>    x <span class="op">=</span> <span class="st">"Lag (weeks)"</span>, y <span class="op">=</span> <span class="st">"Correlation"</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><em>Example output (synthetic data):</em></p>
+<p><img src="figures/lag_correlation.png" class="r-plt" alt="" width="100%"></p>
 </div>
 <div class="section level2">
 <h2 id="step-8-summary-table">Step 8: Summary Table<a class="anchor" aria-label="anchor" href="#step-8-summary-table"></a>
 </h2>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">summary_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  metric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Total ad spend"</span>,</span>
@@ -381,7 +509,7 @@ spend and sales. This helps validate your assumed velocity.</p>
 </h3>
 <p>If your spend CSV includes a <code>channel</code> column (e.g.,
 Google, Meta, LinkedIn), group by channel throughout:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">weekly_by_channel</span> <span class="op">&lt;-</span> <span class="va">daily</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>week <span class="op">=</span> <span class="fu">floor_date</span><span class="op">(</span><span class="va">date</span>, <span class="st">"week"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">week</span>, <span class="va">channel</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -391,7 +519,7 @@ Google, Meta, LinkedIn), group by channel throughout:</p>
 <h3 id="pipeline-specific-analysis">Pipeline-specific analysis<a class="anchor" aria-label="anchor" href="#pipeline-specific-analysis"></a>
 </h3>
 <p>Filter deals by pipeline to analyse specific products:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Only deals from pipeline "1" (e.g., your main sales pipeline)</span></span>
 <span><span class="va">deals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_deals.html">ac_deals</a></span><span class="op">(</span>pipeline <span class="op">=</span> <span class="st">"1"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -402,7 +530,7 @@ Google, Meta, LinkedIn), group by channel throughout:</p>
 the won date. For more accurate velocity, use
 <code><a href="../reference/ac_deal_won_dates.html">ac_deal_won_dates()</a></code> to extract the actual status-change
 timestamp from deal activity logs:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">won_dates</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_deal_won_dates.html">ac_deal_won_dates</a></span><span class="op">(</span><span class="va">won</span><span class="op">$</span><span class="va">deal_id</span><span class="op">)</span></span>
 <span><span class="va">won</span> <span class="op">&lt;-</span> <span class="va">won</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">won_dates</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"deal_id"</span> <span class="op">=</span> <span class="st">"deal_id"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>

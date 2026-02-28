@@ -27,25 +27,23 @@ ac_auth_from_env()
 
 ``` r
 
-# Fetch deals with dates properly typed
+# Fetch deals — cdate/mdate are already POSIXct, value is already numeric
 deals <- ac_deals()
 
-# We need: deal ID, created date, won date, status, value
-# cdate and mdate are already POSIXct thanks to ac_coerce_types()
-# status: 0 = open, 1 = won, 2 = lost
-
+# Select the columns we need
+# status is returned as character: "0" = open, "1" = won, "2" = lost
 deal_dates <- deals |>
   transmute(
     deal_id = id,
     created = as.Date(cdate),
     closed = as.Date(mdate),
-    status = as.integer(status),
-    value = value  # already numeric
+    status = status,
+    value = value
   )
 
 # Won deals with velocity
 won <- deal_dates |>
-  filter(status == 1) |>
+  filter(status == "1") |>
   mutate(
     days_to_close = as.integer(closed - created)
   )
@@ -165,6 +163,10 @@ weekly |>
   theme_minimal()
 ```
 
+*Example output (synthetic data):*
+
+![](figures/weekly_cpl_cps.png)
+
 ## Step 5: Lead-to-Sale Velocity
 
 Understanding how long it takes to convert a lead to a sale is critical
@@ -202,15 +204,25 @@ ggplot(won, aes(days_to_close)) +
   theme_minimal()
 ```
 
-## Step 6: Windowed Attribution
+*Example output (synthetic data):*
 
-The key insight: today’s ad spend generates leads today, but those leads
-close weeks or months later. Naive CPL/CPS (same-day spend vs same-day
-sales) conflates cause and effect.
+![](figures/velocity_distribution.png)
 
-Windowed attribution shifts the spend data back by the median velocity,
-so you’re comparing the spend that *created* leads with the sales those
-leads *eventually* produced.
+## Step 6a: Windowed Attribution (Aggregate)
+
+Naive CPS divides this week’s spend by this week’s sales. But if your
+median velocity is 3 weeks, this week’s sales were actually driven by
+spend from 3 weeks ago. This matters when spend varies over time.
+
+Consider a campaign burst: you double your ad budget in March. Naive CPS
+spikes in March (high spend, same number of sales closing). Windowed CPS
+stays flat in March but spikes 3 weeks later, when the leads generated
+by that burst actually close. This gives you a more accurate picture of
+what each sale really cost.
+
+If your spend is steady week-to-week, the two lines will overlap because
+`lag(spend, 3)` ≈ `spend`. The divergence only appears when spend has
+meaningful variation (campaign bursts, budget changes, seasonal ramps).
 
 ``` r
 
@@ -254,6 +266,108 @@ windowed |>
   theme_minimal()
 ```
 
+*Example output (synthetic data with campaign bursts in March and
+September):*
+
+![](figures/naive_vs_windowed.png)
+
+## Step 6b: Per-Deal Attribution
+
+The windowed approach above is an aggregate approximation. For more
+precise attribution, work at the deal level: for each won deal, look up
+the ad spend on the day that deal was *created*, then divide by the
+number of leads created that same day. This gives each deal its own
+attributed acquisition cost.
+
+    Deal 1042: created 10 Mar, closed 2 Apr (23 days)
+      Ad spend on 10 Mar: $280
+      Leads created on 10 Mar: 4
+      → Attributed cost for deal 1042: $280 / 4 = $70
+
+This method handles uneven spend naturally. A deal created during a
+campaign burst gets a higher attributed cost than one created on a quiet
+day, regardless of when it closes.
+
+``` r
+
+# For each won deal, look up spend on the day it was created
+won_attributed <- won |>
+  left_join(
+    daily |> select(date, daily_spend = spend, daily_leads = leads),
+    by = c("created" = "date")
+  ) |>
+  mutate(
+    # This deal's share of that day's spend
+    attributed_cost = if_else(
+      daily_leads > 0,
+      daily_spend / daily_leads,
+      NA_real_
+    )
+  )
+
+# Summary: what did each sale actually cost to acquire?
+won_attributed |>
+  filter(!is.na(attributed_cost)) |>
+  summarise(
+    deals = n(),
+    median_cost = median(attributed_cost),
+    mean_cost = mean(attributed_cost),
+    p25 = quantile(attributed_cost, 0.25),
+    p75 = quantile(attributed_cost, 0.75)
+  )
+```
+
+### Compare naive vs per-deal CPS over time
+
+``` r
+
+# Monthly comparison
+monthly_attributed <- won_attributed |>
+  mutate(month = floor_date(closed, "month")) |>
+  group_by(month) |>
+  summarise(
+    avg_attributed_cps = mean(attributed_cost, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+monthly_naive <- daily |>
+  mutate(month = floor_date(date, "month")) |>
+  group_by(month) |>
+  summarise(spend = sum(spend), sales = sum(sales), .groups = "drop") |>
+  mutate(naive_cps = if_else(sales > 0, spend / sales, NA_real_))
+
+monthly_attributed |>
+  left_join(monthly_naive |> select(month, naive_cps), by = "month") |>
+  select(month, `Naive CPS` = naive_cps, `Per-Deal CPS` = avg_attributed_cps) |>
+  pivot_longer(-month, names_to = "method", values_to = "cost") |>
+  ggplot(aes(month, cost, colour = method)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(
+    title = "Monthly Cost per Sale: Naive vs Per-Deal Attribution",
+    subtitle = "Per-deal attributes each sale to spend on the day its lead was created",
+    x = NULL, y = "Cost per Sale ($)", colour = NULL
+  ) +
+  theme_minimal()
+```
+
+*Example output (synthetic data with campaign bursts in March and
+September):*
+
+![](figures/per_deal_attribution.png)
+
+### Which method to use?
+
+| Method | Pros | Cons |
+|----|----|----|
+| Naive (same-period) | Simple, no assumptions | Conflates cause and effect |
+| Windowed (lagged) | Accounts for velocity | Uses median lag for all deals; loses deal-level detail |
+| Per-deal attribution | Most accurate; handles variable spend and velocity | Requires deal-level created dates; assumes all leads come from paid ads |
+
+For most teams, start with per-deal attribution. Fall back to windowed
+if you don’t have reliable deal creation dates.
+
 ## Step 7: Spend-to-Sales Correlation
 
 Test which lag window produces the strongest correlation between spend
@@ -294,6 +408,10 @@ ggplot(lag_test, aes(lag_weeks, correlation)) +
   ) +
   theme_minimal()
 ```
+
+*Example output (synthetic data):*
+
+![](figures/lag_correlation.png)
 
 ## Step 8: Summary Table
 
