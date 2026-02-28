@@ -10,7 +10,8 @@ Description: A tidy, cached, and MCP-ready R client for the ActiveCampaign CRM
     incremental sync with RDS caching, and an MCP server for AI assistant
     integration via 'mcptools'.
 License: MIT + file LICENSE
-URL: https://github.com/pcstrategyandopsco/activecampaignr
+URL: https://pcstrategyandopsco.github.io/activecampaignr/,
+    https://github.com/pcstrategyandopsco/activecampaignr
 BugReports: https://github.com/pcstrategyandopsco/activecampaignr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

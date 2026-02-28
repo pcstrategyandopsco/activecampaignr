@@ -1,0 +1,172 @@
+# Getting Started with activecampaignr
+
+## Installation
+
+``` r
+
+# Install from GitHub
+# install.packages("pak")
+pak::pak("pcstrategyandopsco/activecampaignr")
+```
+
+## Authentication
+
+You need your ActiveCampaign API URL and API key, found under **Settings
+\> Developer** in your AC account.
+
+``` r
+
+library(activecampaignr)
+
+# Option 1: Direct authentication
+ac_auth(
+  url = "https://yourname.api-us1.com",
+  api_key = "your-api-key-here"
+)
+
+# Option 2: From environment variables (recommended)
+# Set ACTIVECAMPAIGN_URL and ACTIVECAMPAIGN_API_KEY in .Renviron
+ac_auth_from_env()
+```
+
+## Fetching Deals
+
+All list functions return tidy tibbles with automatic pagination:
+
+``` r
+
+# All deals
+deals <- ac_deals()
+deals
+
+# Won deals only
+won <- ac_deals(status = 1)
+
+# Deals modified in the last 7 days
+recent <- ac_deals(updated_after = Sys.Date() - 7)
+
+# Get a single deal
+deal <- ac_deal("12345")
+```
+
+## Working with Custom Fields
+
+Custom fields are fetched in wide format — one row per deal, one column
+per field:
+
+``` r
+
+cf <- ac_deal_custom_fields_wide()
+cf
+# # A tibble: 500 x 12
+#   deal_id student_id enrolment_id pathway_name ...
+#   <chr>   <chr>      <chr>        <chr>
+# 1 1001    S-123      E-456        Full Stack
+# ...
+```
+
+## Contacts
+
+``` r
+
+# All contacts
+contacts <- ac_contacts()
+
+# Search by email
+contact <- ac_contacts(email = "user@example.com")
+
+# Create a contact
+new_contact <- ac_create_contact(
+  email = "new@example.com",
+  first_name = "Jane",
+  last_name = "Doe",
+  phone = "021 123 4567"
+)
+```
+
+## Caching and Incremental Sync
+
+For production pipelines, use the sync functions which cache results in
+RDS files and only fetch recent changes:
+
+``` r
+
+# First call: fetches everything, caches to disk
+result <- ac_sync_deals()
+deals <- result$deals
+custom_fields <- result$custom_fields
+
+# Subsequent calls within 10 minutes: returns cache instantly
+result <- ac_sync_deals()  # <1 second
+
+# Force a full refresh
+result <- ac_sync_deals(force = TRUE)
+
+# Configure cache TTL
+result <- ac_sync_deals(ttl_minutes = 30, lookback_days = 3)
+```
+
+``` r
+
+# Check what's cached
+ac_cache_status()
+
+# Clear cache
+ac_cache_clear()
+```
+
+## Phone Normalization
+
+Standardize NZ/AU phone numbers for matching:
+
+``` r
+
+ac_standardize_phone("021 123 4567")   # "+64211234567"
+ac_standardize_phone("+61412345678")    # "+61412345678"
+ac_standardize_phone("0211234567")      # "+64211234567"
+```
+
+## Pipelines and Stages
+
+``` r
+
+pipelines <- ac_deal_pipelines()
+stages <- ac_deal_stages()
+
+# Stages for a specific pipeline
+stages <- ac_deal_stages(pipeline = "1")
+```
+
+## Creating and Updating Deals
+
+``` r
+
+# Create a deal
+deal <- ac_create_deal(
+  title = "New Enrolment - Jane Doe",
+  value = 500000,  # in cents
+  currency = "nzd",
+  pipeline = "1",
+  stage = "3",
+  owner = "5",
+  contact = "12345"
+)
+
+# Update a deal
+updated <- ac_update_deal(deal$id, title = "Updated Title", stage = "4")
+
+# Delete a deal
+ac_delete_deal(deal$id)
+```
+
+## Next Steps
+
+- **[Caching and
+  Sync](https://pcstrategyandopsco.github.io/activecampaignr/articles/caching-and-sync.md)**
+  — Advanced cache configuration
+- **[Pipeline
+  Analysis](https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.md)**
+  — Win rates and velocity reports
+- **[MCP
+  Integration](https://pcstrategyandopsco.github.io/activecampaignr/articles/mcp-integration.md)**
+  — Use AC as an AI assistant tool

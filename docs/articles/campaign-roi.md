@@ -1,0 +1,110 @@
+# Campaign ROI Report with officer
+
+## Overview
+
+Generate a branded Word document analysing campaign performance using
+activecampaignr and [officer](https://davidgohel.github.io/officer/).
+
+## Setup
+
+``` r
+
+library(activecampaignr)
+library(dplyr)
+library(ggplot2)
+library(officer)
+library(flextable)
+
+ac_auth_from_env()
+```
+
+## Fetch Campaign Data
+
+``` r
+
+campaigns <- ac_campaigns()
+```
+
+## Campaign Summary Table
+
+``` r
+
+campaign_summary <- campaigns |>
+  select(any_of(c("id", "name", "type", "status", "send_amt",
+                   "total_amt", "opens", "clicks", "uniqueopens",
+                   "uniquelinks", "subscriberclicks"))) |>
+  mutate(across(any_of(c("send_amt", "opens", "clicks", "uniqueopens")),
+                as.numeric)) |>
+  mutate(
+    open_rate = ifelse(send_amt > 0, uniqueopens / send_amt, NA),
+    click_rate = ifelse(send_amt > 0, uniquelinks / send_amt, NA)
+  ) |>
+  arrange(desc(open_rate))
+```
+
+## Visualizations
+
+``` r
+
+p_open_rate <- campaign_summary |>
+  filter(!is.na(open_rate), send_amt >= 100) |>
+  head(15) |>
+  ggplot(aes(x = reorder(name, open_rate), y = open_rate)) +
+  geom_col(fill = "#7c3aed") +
+  geom_text(aes(label = scales::percent(open_rate, accuracy = 0.1)),
+            hjust = -0.1, size = 3) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  labs(title = "Top Campaigns by Open Rate",
+       subtitle = "Campaigns with 100+ sends",
+       x = NULL, y = "Unique Open Rate") +
+  theme_minimal()
+
+p_click_rate <- campaign_summary |>
+  filter(!is.na(click_rate), send_amt >= 100) |>
+  head(15) |>
+  ggplot(aes(x = reorder(name, click_rate), y = click_rate)) +
+  geom_col(fill = "#0891b2") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Top Campaigns by Click Rate", x = NULL, y = "Click Rate") +
+  theme_minimal()
+```
+
+## Generate Word Document
+
+``` r
+
+doc <- read_docx() |>
+  body_add_par("Campaign Performance Report", style = "heading 1") |>
+  body_add_par(format(Sys.Date(), "%d %b %Y"), style = "Normal") |>
+  body_add_par("", style = "Normal") |>
+
+  body_add_par("Summary", style = "heading 2") |>
+  body_add_flextable(
+    campaign_summary |>
+      head(10) |>
+      select(name, send_amt, uniqueopens, open_rate, click_rate) |>
+      flextable() |>
+      set_formatter(
+        open_rate = function(x) ifelse(is.na(x), "-", scales::percent(x, 0.1)),
+        click_rate = function(x) ifelse(is.na(x), "-", scales::percent(x, 0.1))
+      ) |>
+      set_header_labels(
+        name = "Campaign", send_amt = "Sends",
+        uniqueopens = "Unique Opens",
+        open_rate = "Open Rate", click_rate = "Click Rate"
+      ) |>
+      autofit()
+  ) |>
+
+  body_add_break() |>
+  body_add_par("Open Rate Analysis", style = "heading 2") |>
+  body_add_gg(p_open_rate, width = 6, height = 4) |>
+
+  body_add_break() |>
+  body_add_par("Click Rate Analysis", style = "heading 2") |>
+  body_add_gg(p_click_rate, width = 6, height = 4)
+
+print(doc, target = "campaign-roi-report.docx")
+```

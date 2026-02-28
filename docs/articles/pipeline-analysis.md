@@ -1,0 +1,132 @@
+# Pipeline Analysis with officer
+
+## Overview
+
+This vignette demonstrates how to use activecampaignr with the
+[officer](https://davidgohel.github.io/officer/) package to generate
+PowerPoint pipeline analysis reports.
+
+## Setup
+
+``` r
+
+library(activecampaignr)
+library(dplyr)
+library(ggplot2)
+library(officer)
+
+ac_auth_from_env()
+```
+
+## Fetch Data
+
+``` r
+
+# Sync deals with cache
+result <- ac_sync_deals()
+deals <- result$deals
+
+# Get pipeline and stage metadata
+pipelines <- ac_deal_pipelines()
+stages <- ac_deal_stages()
+users <- ac_users()
+```
+
+## Win Rate by Day of Week
+
+``` r
+
+won_deals <- deals |>
+  filter(!is.na(mdate)) |>
+  mutate(
+    dow = weekdays(mdate),
+    dow = factor(dow, levels = c("Monday", "Tuesday", "Wednesday",
+                                  "Thursday", "Friday", "Saturday", "Sunday"))
+  )
+
+p_dow <- won_deals |>
+  count(dow) |>
+  ggplot(aes(x = dow, y = n, fill = dow)) +
+  geom_col(show.legend = FALSE) +
+  labs(title = "Deals Won by Day of Week", x = NULL, y = "Count") +
+  theme_minimal()
+```
+
+## Pipeline Velocity
+
+``` r
+
+# Calculate days in each stage
+velocity <- deals |>
+  filter(!is.na(cdate), !is.na(mdate)) |>
+  mutate(days_in_pipeline = as.numeric(difftime(mdate, cdate, units = "days"))) |>
+  left_join(stages |> select(id, title), by = c("stage" = "id")) |>
+  group_by(title) |>
+  summarise(
+    n = n(),
+    median_days = median(days_in_pipeline, na.rm = TRUE),
+    mean_days = mean(days_in_pipeline, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  arrange(median_days)
+
+p_velocity <- velocity |>
+  ggplot(aes(x = reorder(title, median_days), y = median_days)) +
+  geom_col(fill = "#2563eb") +
+  coord_flip() +
+  labs(title = "Pipeline Velocity", x = NULL, y = "Median Days") +
+  theme_minimal()
+```
+
+## Win Rate by Owner
+
+``` r
+
+owner_stats <- deals |>
+  left_join(users |> select(id, first_name, last_name),
+            by = c("owner" = "id")) |>
+  mutate(owner_name = paste(first_name, last_name)) |>
+  group_by(owner_name) |>
+  summarise(
+    total = n(),
+    won = sum(status == "1", na.rm = TRUE),
+    win_rate = won / total,
+    .groups = "drop"
+  ) |>
+  filter(total >= 10) |>
+  arrange(desc(win_rate))
+
+p_owner <- owner_stats |>
+  ggplot(aes(x = reorder(owner_name, win_rate), y = win_rate)) +
+  geom_col(fill = "#16a34a") +
+  geom_text(aes(label = scales::percent(win_rate, accuracy = 1)),
+            hjust = -0.1, size = 3) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  labs(title = "Win Rate by Owner", x = NULL, y = "Win Rate") +
+  theme_minimal()
+```
+
+## Generate PowerPoint Report
+
+``` r
+
+pptx <- read_pptx() |>
+  add_slide(layout = "Title Slide") |>
+  ph_with("Pipeline Analysis Report", location = ph_location_type("ctrTitle")) |>
+  ph_with(format(Sys.Date(), "%d %b %Y"), location = ph_location_type("subTitle")) |>
+
+  add_slide(layout = "Title and Content") |>
+  ph_with("Deals Won by Day of Week", location = ph_location_type("title")) |>
+  ph_with(dml(ggobj = p_dow), location = ph_location_type("body")) |>
+
+  add_slide(layout = "Title and Content") |>
+  ph_with("Pipeline Velocity", location = ph_location_type("title")) |>
+  ph_with(dml(ggobj = p_velocity), location = ph_location_type("body")) |>
+
+  add_slide(layout = "Title and Content") |>
+  ph_with("Win Rate by Owner", location = ph_location_type("title")) |>
+  ph_with(dml(ggobj = p_owner), location = ph_location_type("body"))
+
+print(pptx, target = "pipeline-report.pptx")
+```

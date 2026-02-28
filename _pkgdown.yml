@@ -1,0 +1,138 @@
+url: https://pcstrategyandopsco.github.io/activecampaignr/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+  components:
+    github:
+      icon: fa-github
+      href: https://github.com/pcstrategyandopsco/activecampaignr
+      aria-label: GitHub
+
+articles:
+- title: Getting Started
+  contents:
+  - getting-started
+  - caching-and-sync
+
+- title: Integrations
+  contents:
+  - mcp-integration
+
+- title: Analysis Examples
+  contents:
+  - pipeline-analysis
+  - shiny-deal-dashboard
+  - campaign-roi
+
+reference:
+- title: Authentication
+  contents:
+  - ac_auth
+  - ac_auth_from_env
+
+- title: Deals
+  contents:
+  - ac_deals
+  - ac_deal
+  - ac_create_deal
+  - ac_update_deal
+  - ac_delete_deal
+
+- title: Deal Custom Fields
+  contents:
+  - ac_deal_custom_fields
+  - ac_deal_custom_field_values
+  - ac_deal_custom_fields_wide
+
+- title: Deal Activities
+  contents:
+  - ac_deal_activities
+  - ac_deal_won_date
+  - ac_deal_won_dates
+
+- title: Pipelines & Stages
+  contents:
+  - ac_deal_pipelines
+  - ac_deal_stages
+
+- title: Contacts
+  contents:
+  - ac_contacts
+  - ac_contact
+  - ac_create_contact
+  - ac_update_contact
+
+- title: Contact Custom Fields
+  contents:
+  - ac_contact_custom_fields
+  - ac_contact_custom_fields_wide
+
+- title: Contact Tags
+  contents:
+  - ac_contact_tags
+  - ac_add_tag
+  - ac_remove_tag
+
+- title: Accounts
+  contents:
+  - ac_accounts
+  - ac_create_account
+
+- title: Campaigns
+  contents:
+  - ac_campaigns
+  - ac_campaign_messages
+
+- title: Tasks
+  contents:
+  - ac_tasks
+  - ac_create_task
+  - ac_update_task
+
+- title: Tags
+  contents:
+  - ac_tags
+  - ac_create_tag
+
+- title: Lists
+  contents:
+  - ac_lists
+  - ac_list_contacts
+
+- title: Users
+  contents:
+  - ac_users
+
+- title: Automations
+  contents:
+  - ac_automations
+  - ac_trigger_automation
+
+- title: Webhooks
+  contents:
+  - ac_webhooks
+  - ac_create_webhook
+  - ac_delete_webhook
+
+- title: Caching & Sync
+  contents:
+  - ac_sync
+  - ac_sync_deals
+  - ac_sync_contacts
+  - ac_cache_path
+  - ac_cache_clear
+  - ac_cache_status
+
+- title: MCP Server
+  contents:
+  - ac_mcp_server
+
+- title: Utilities
+  contents:
+  - ac_utils
+  - ac_standardize_phone
