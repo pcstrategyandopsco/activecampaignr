@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{ac_standardize_phone_nzau}
 \alias{ac_standardize_phone_nzau}
-\title{Built-in NZ/AU Phone Normalization}
+\title{Built-in NZ/AU Phone Normalization (Fallback)}
 \usage{
 ac_standardize_phone_nzau(phone)
 }
@@ -13,6 +13,6 @@ ac_standardize_phone_nzau(phone)
 E.164 formatted string or \code{NA_character_}
 }
 \description{
-Built-in NZ/AU Phone Normalization
+Used when \pkg{dialvalidator} is not installed.
 }
 \keyword{internal}

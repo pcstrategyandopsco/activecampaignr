@@ -42,3 +42,19 @@ test_that("ac_standardize_phone vectorizes", {
   expect_equal(result[3], "+61412345678")
   expect_true(is.na(result[4]))
 })
+
+test_that("ac_standardize_phone handles international numbers", {
+  expect_equal(ac_standardize_phone("+12125551234"), "+12125551234")
+  expect_equal(ac_standardize_phone("+442071234567"), "+442071234567")
+  expect_equal(ac_standardize_phone("+81312345678"), "+81312345678")
+})
+
+test_that("ac_standardize_phone respects default_region", {
+  skip_if_not_installed("dialvalidator")
+  # AU local number with AU default
+  expect_equal(ac_standardize_phone("0412345678", default_region = "AU"), "+61412345678")
+})
+
+test_that("ac_standardize_phone returns character(0) for empty vector", {
+  expect_equal(ac_standardize_phone(character(0)), character(0))
+})

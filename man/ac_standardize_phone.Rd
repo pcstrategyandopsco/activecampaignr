@@ -4,24 +4,34 @@
 \alias{ac_standardize_phone}
 \title{Standardize Phone Number}
 \usage{
-ac_standardize_phone(phone)
+ac_standardize_phone(phone, default_region = "NZ")
 }
 \arguments{
-\item{phone}{A character vector of phone numbers}
+\item{phone}{A character vector of phone numbers.}
+
+\item{default_region}{ISO 3166-1 alpha-2 region code used when numbers
+lack a \code{+} prefix. Defaults to \code{"NZ"}.}
 }
 \value{
 A character vector of E.164 formatted phone strings
-(e.g., \code{"+6421234567"}), or \code{NA_character_} for unparseable numbers
+(e.g., \code{"+64211234567"}), or \code{NA_character_} for unparseable/invalid
+numbers.
 }
 \description{
-Normalizes a phone number to E.164 international format using
-built-in NZ/AU rules. Numbers with an existing international prefix
-(\code{+}) are preserved as-is. Local numbers (starting with \code{0}) are
-assumed to be NZ.
+Normalizes a phone number to E.164 international format. When the
+\pkg{dialvalidator} package is installed, numbers are parsed and validated
+against Google's libphonenumber metadata (240+ territories). Without it,
+a built-in NZ/AU heuristic is used as a fallback.
+}
+\details{
+Numbers with an existing international prefix (\code{+}) are parsed directly.
+Local-format numbers (starting with \code{0} or bare digits) are assumed to
+be NZ by default.
 }
 \examples{
-ac_standardize_phone("021 123 4567")          # "+6421234567"
+ac_standardize_phone("021 123 4567")          # "+64211234567"
 ac_standardize_phone("+64211234567")           # "+64211234567"
 ac_standardize_phone("+61412345678")           # "+61412345678"
-ac_standardize_phone(NA)                        # NA
+ac_standardize_phone("+12125551234")           # "+12125551234"
+ac_standardize_phone(NA)                       # NA
 }
