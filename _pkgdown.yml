@@ -2,6 +2,8 @@ url: https://pcstrategyandopsco.github.io/activecampaignr/
 
 template:
   bootstrap: 5
+  favicon:
+    href: man/figures/logo.png
 
 navbar:
   structure:
