@@ -55,46 +55,97 @@
 <div class="section level2">
 <h2 id="why-this-package">Why This Package?<a class="anchor" aria-label="anchor" href="#why-this-package"></a>
 </h2>
-<p>This package builds on the foundation laid by <a href="https://github.com/rwColumn/ractivecampaign" class="external-link"><code>ractivecampaign</code></a>, which pioneered R access to the ActiveCampaign API. We’re grateful for that work — it proved the value of an R-native AC client and informed many of the patterns used here.</p>
+<p>This package builds on the foundation laid by <a href="https://github.com/rwColumn/ractivecampaign" class="external-link"><code>ractivecampaign</code></a>, which pioneered R access to the ActiveCampaign API. We’re grateful for that work. It proved the value of an R-native AC client and informed many of the patterns used here.</p>
 <p>However, production use at scale revealed gaps that warranted a ground-up rebuild:</p>
-<ul>
-<li>
-<strong>Broader API coverage</strong> — <code>ractivecampaign</code> covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks</li>
-<li>
-<strong>Automatic pagination</strong> — Fetching thousands of records shouldn’t require manual offset loops</li>
-<li>
-<strong>Caching and incremental sync</strong> — Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes</li>
-<li>
-<strong>Modern HTTP backend</strong> — Built on httr2 with native rate limiting (<code>req_throttle</code>) and retry with exponential backoff (<code>req_retry</code>), replacing manual <code><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep()</a></code> and <code>retry()</code> calls</li>
-<li>
-<strong>Custom field pivot</strong> — ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field)</li>
-<li>
-<strong>MCP integration</strong> — Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data</li>
-<li>
-<strong>Write operations</strong> — Full CRUD (create, read, update, delete) for all entities, not just read</li>
-</ul>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Capability</th>
+<th>Detail</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Broader API coverage</td>
+<td>
+<code>ractivecampaign</code> covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks</td>
+</tr>
+<tr>
+<td>Automatic pagination</td>
+<td>Fetching thousands of records shouldn’t require manual offset loops</td>
+</tr>
+<tr>
+<td>Caching and incremental sync</td>
+<td>Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes</td>
+</tr>
+<tr>
+<td>Modern HTTP backend</td>
+<td>Built on httr2 with native rate limiting (<code>req_throttle</code>) and retry with exponential backoff (<code>req_retry</code>), replacing manual <code><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep()</a></code> and <code>retry()</code> calls</td>
+</tr>
+<tr>
+<td>Custom field pivot</td>
+<td>ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field)</td>
+</tr>
+<tr>
+<td>MCP integration</td>
+<td>Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data</td>
+</tr>
+<tr>
+<td>Write operations</td>
+<td>Full CRUD (create, read, update, delete) for all entities, not just read</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
 </h2>
-<ul>
-<li>
-<strong>Tidy outputs</strong> — All functions return tibbles with snake_case columns</li>
-<li>
-<strong>Automatic pagination</strong> — Fetch thousands of records without manual page handling</li>
-<li>
-<strong>Rate limiting &amp; retry</strong> — Built-in throttling (4 req/sec) and exponential backoff</li>
-<li>
-<strong>RDS caching</strong> — Incremental sync fetches only recent changes</li>
-<li>
-<strong>Full CRUD</strong> — Read, create, update, delete for deals, contacts, tags, and more</li>
-<li>
-<strong>Custom fields</strong> — Wide-format pivot (one row per entity, one column per field)</li>
-<li>
-<strong>MCP server</strong> — Expose your CRM as tools for AI assistants via mcptools</li>
-<li>
-<strong>NZ/AU phone normalization</strong> — Standardize phone numbers for matching</li>
-</ul>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Feature</th>
+<th>Detail</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Tidy outputs</td>
+<td>All functions return tibbles with snake_case columns</td>
+</tr>
+<tr>
+<td>Automatic pagination</td>
+<td>Fetch thousands of records without manual page handling</td>
+</tr>
+<tr>
+<td>Rate limiting &amp; retry</td>
+<td>Built-in throttling (4 req/sec) and exponential backoff</td>
+</tr>
+<tr>
+<td>RDS caching</td>
+<td>Incremental sync fetches only recent changes</td>
+</tr>
+<tr>
+<td>Full CRUD</td>
+<td>Read, create, update, delete for deals, contacts, tags, and more</td>
+</tr>
+<tr>
+<td>Custom fields</td>
+<td>Wide-format pivot, one row per entity, one column per field</td>
+</tr>
+<tr>
+<td>MCP server</td>
+<td>Expose your CRM as tools for AI assistants via mcptools</td>
+</tr>
+<tr>
+<td>NZ/AU phone normalization</td>
+<td>Standardize phone numbers for matching</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -131,20 +182,42 @@
 <div class="section level2">
 <h2 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
 </h2>
-<ul>
-<li>
-<a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/getting-started.html">Getting Started</a> — Auth, first API call, caching</li>
-<li>
-<a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/caching-and-sync.html">Caching and Sync</a> — Incremental sync, parallel with future</li>
-<li>
-<a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/mcp-integration.html">MCP Integration</a> — AI assistant tool setup</li>
-<li>
-<a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.html">Pipeline Analysis</a> — Win rates, velocity, PowerPoint reports</li>
-<li>
-<a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.html">Shiny Deal Dashboard</a> — Interactive deal explorer</li>
-<li>
-<a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html">Campaign ROI</a> — Campaign performance Word report</li>
-</ul>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Vignette</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/getting-started.html">Getting Started</a></td>
+<td>Auth, first API call, caching</td>
+</tr>
+<tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/caching-and-sync.html">Caching and Sync</a></td>
+<td>Incremental sync, parallel with future</td>
+</tr>
+<tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/mcp-integration.html">MCP Integration</a></td>
+<td>AI assistant tool setup</td>
+</tr>
+<tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.html">Pipeline Analysis</a></td>
+<td>Win rates, velocity, PowerPoint reports</td>
+</tr>
+<tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.html">Shiny Deal Dashboard</a></td>
+<td>Interactive deal explorer</td>
+</tr>
+<tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html">Campaign ROI</a></td>
+<td>Campaign performance Word report</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="acknowledgements">Acknowledgements<a class="anchor" aria-label="anchor" href="#acknowledgements"></a>
