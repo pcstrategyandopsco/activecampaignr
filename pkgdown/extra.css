@@ -1,0 +1,27 @@
+/* Table column widths: 35% / 65% */
+.contents table th:first-child,
+.contents table td:first-child {
+  width: 35%;
+}
+
+.contents table th:last-child,
+.contents table td:last-child {
+  width: 65%;
+}
+
+/* Table heading styling */
+.contents table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  letter-spacing: 0.03em;
+  padding: 0.75rem;
+}
+
+/* Subtle row borders */
+.contents table tbody td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #eee;
+}

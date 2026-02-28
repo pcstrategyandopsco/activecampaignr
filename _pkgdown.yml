@@ -48,6 +48,7 @@ reference:
   - ac_deal_custom_fields
   - ac_deal_custom_field_values
   - ac_deal_custom_fields_wide
+  - ac_join_deal_fields
 
 - title: Deal Activities
   contents:
@@ -71,6 +72,7 @@ reference:
   contents:
   - ac_contact_custom_fields
   - ac_contact_custom_fields_wide
+  - ac_join_contact_fields
 
 - title: Contact Tags
   contents:

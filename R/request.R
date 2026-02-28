@@ -147,6 +147,16 @@ ac_coerce_types <- function(df) {
     )
   }
 
+  # Coerce numeric columns
+  num_cols <- intersect(
+    names(df),
+    c("value", "score", "percent", "deal_count", "contact_amount",
+      "score_raw", "sentiment_score")
+  )
+  for (col in num_cols) {
+    df[[col]] <- suppressWarnings(as.numeric(df[[col]]))
+  }
+
   # Keep IDs as character to avoid integer overflow
   id_cols <- intersect(names(df), c("id", "owner", "contact", "group",
                                      "stage", "deal", "userid"))

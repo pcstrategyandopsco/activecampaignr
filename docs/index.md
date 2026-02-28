@@ -4,26 +4,8 @@ A **tidy**, **cached**, and **MCP-ready** R client for the
 [ActiveCampaign API
 v3](https://developers.activecampaign.com/reference/overview).
 
-## Why This Package?
+## Overview
 
-This package builds on the foundation laid by
-[`ractivecampaign`](https://github.com/rwColumn/ractivecampaign), which
-pioneered R access to the ActiveCampaign API. We’re grateful for that
-work. It proved the value of an R-native AC client and informed many of
-the patterns used here.
-
-However, production use at scale revealed gaps that warranted a
-ground-up rebuild:
-
-| Capability | Detail |
-|----|----|
-| Broader API coverage | `ractivecampaign` covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks |
-| Automatic pagination | Fetching thousands of records shouldn’t require manual offset loops |
-| Caching and incremental sync | Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes |
-| Modern HTTP backend | Built on httr2 with native rate limiting (`req_throttle`) and retry with exponential backoff (`req_retry`), replacing manual [`Sys.sleep()`](https://rdrr.io/r/base/Sys.sleep.html) and `retry()` calls |
-| Custom field pivot | ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field) |
-| MCP integration | Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data |
-| Write operations | Full CRUD (create, read, update, delete) for all entities, not just read |
 
 ## Features
 
@@ -82,6 +64,19 @@ deals <- result$deals
 | [Pipeline Analysis](https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.html) | Win rates, velocity, PowerPoint reports |
 | [Shiny Deal Dashboard](https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.html) | Interactive deal explorer |
 | [Campaign ROI](https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html) | Campaign performance Word report |
+
+
+## What is new in activecampaignR
+| Capability | Detail |
+|----|----|
+| Broader API coverage | `ractivecampaign` covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks |
+| Automatic pagination | Fetching thousands of records shouldn’t require manual offset loops |
+| Caching and incremental sync | Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes |
+| Modern HTTP backend | Built on httr2 with native rate limiting (`req_throttle`) and retry with exponential backoff (`req_retry`), replacing manual [`Sys.sleep()`](https://rdrr.io/r/base/Sys.sleep.html) and `retry()` calls |
+| Custom field pivot | ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field) |
+| MCP integration | Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data |
+| Write operations | Full CRUD (create, read, update, delete) for all entities, not just read |
+
 
 ## Acknowledgements
 
