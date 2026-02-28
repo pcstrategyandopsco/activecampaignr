@@ -4,27 +4,24 @@
 \alias{ac_standardize_phone}
 \title{Standardize Phone Number}
 \usage{
-ac_standardize_phone(phone, default_region = "NZ")
+ac_standardize_phone(phone)
 }
 \arguments{
 \item{phone}{A character vector of phone numbers}
-
-\item{default_region}{ISO 3166-1 alpha-2 country code assumed for
-numbers without a country prefix (default: \code{"NZ"})}
 }
 \value{
 A character vector of E.164 formatted phone strings
 (e.g., \code{"+6421234567"}), or \code{NA_character_} for unparseable numbers
 }
 \description{
-Normalizes a phone number to E.164 international format. If the
-\code{dialr} package is installed, supports all countries via Google's
-libphonenumber. Otherwise, falls back to built-in NZ/AU rules.
+Normalizes a phone number to E.164 international format using
+built-in NZ/AU rules. Numbers with an existing international prefix
+(\code{+}) are preserved as-is. Local numbers (starting with \code{0}) are
+assumed to be NZ.
 }
 \examples{
 ac_standardize_phone("021 123 4567")          # "+6421234567"
 ac_standardize_phone("+64211234567")           # "+64211234567"
 ac_standardize_phone("+61412345678")           # "+61412345678"
-ac_standardize_phone("(555) 867-5309", "US")   # "+15558675309" (with dialr)
 ac_standardize_phone(NA)                        # NA
 }

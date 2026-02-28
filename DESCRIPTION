@@ -28,7 +28,6 @@ Imports:
     tidyr
 Suggests:
     config,
-    dialr,
     future,
     httptest2,
     knitr,
