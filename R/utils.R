@@ -4,26 +4,28 @@
 #' @importFrom rlang .data .env %||%
 NULL
 
-#' Standardize Phone Number (NZ/AU)
+#' Standardize Phone Number
 #'
-#' Normalizes a phone number to international format (`+64` for NZ,
-#' `+61` for AU). Handles local formats with and without leading zero,
-#' and various country code prefixes.
+#' Normalizes a phone number to E.164 international format. If the
+#' `dialr` package is installed, supports all countries via Google's
+#' libphonenumber. Otherwise, falls back to built-in NZ/AU rules.
 #'
-#' @param phone A character string containing a phone number
-#' @return A standardized phone string (e.g., `"+6421234567"`), or
-#'   `NA_character_` if the number cannot be parsed
+#' @param phone A character vector of phone numbers
+#' @param default_region ISO 3166-1 alpha-2 country code assumed for
+#'   numbers without a country prefix (default: `"NZ"`)
+#' @return A character vector of E.164 formatted phone strings
+#'   (e.g., `"+6421234567"`), or `NA_character_` for unparseable numbers
 #' @export
 #' @examples
-#' ac_standardize_phone("021 123 4567")   # "+6421234567"
-#' ac_standardize_phone("+64211234567")    # "+64211234567"
-#' ac_standardize_phone("0412345678")      # "+64412345678"
-#' ac_standardize_phone("+61412345678")    # "+61412345678"
-#' ac_standardize_phone(NA)                # NA
-ac_standardize_phone <- function(phone) {
+#' ac_standardize_phone("021 123 4567")          # "+6421234567"
+#' ac_standardize_phone("+64211234567")           # "+64211234567"
+#' ac_standardize_phone("+61412345678")           # "+61412345678"
+#' ac_standardize_phone("(555) 867-5309", "US")   # "+15558675309" (with dialr)
+#' ac_standardize_phone(NA)                        # NA
+ac_standardize_phone <- function(phone, default_region = "NZ") {
   if (length(phone) > 1) {
     return(vapply(phone, ac_standardize_phone, character(1),
-                  USE.NAMES = FALSE))
+                  default_region = default_region, USE.NAMES = FALSE))
   }
 
   if (is.na(phone) || is.null(phone) || !nzchar(trimws(phone))) {
@@ -31,13 +33,33 @@ ac_standardize_phone <- function(phone) {
   }
 
   phone <- trimws(phone)
+
+  # Use dialr if available (supports all countries)
+  if (requireNamespace("dialr", quietly = TRUE)) {
+    parsed <- dialr::phone(phone, default_region)
+    if (dialr::is_valid(parsed)) {
+      return(dialr::format_phone(parsed, "E164"))
+    }
+    return(NA_character_)
+  }
+
+  # Fallback: built-in NZ/AU rules
+  ac_standardize_phone_nzau(phone)
+}
+
+#' Built-in NZ/AU Phone Normalization
+#'
+#' @param phone A single phone string
+#' @return E.164 formatted string or `NA_character_`
+#' @keywords internal
+ac_standardize_phone_nzau <- function(phone) {
   has_plus <- startsWith(phone, "+")
   digits <- gsub("[^0-9]", "", phone)
 
   # Too short to be valid
   if (nchar(digits) < 8) return(NA_character_)
 
-  # Already has + prefix — trust it
+  # Already has + prefix
   if (has_plus) return(paste0("+", digits))
 
   # Starts with 64 (NZ country code)
@@ -50,7 +72,7 @@ ac_standardize_phone <- function(phone) {
     return(paste0("+", digits))
   }
 
-  # Starts with 0 (local format — assume NZ)
+  # Starts with 0 (local format, assume NZ)
   if (startsWith(digits, "0")) {
     return(paste0("+64", substring(digits, 2)))
   }

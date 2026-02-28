@@ -16,6 +16,8 @@
 
 - [Pipeline Analysis with
   officer](https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.md):
+- [Advertising Effectiveness
+  Analysis](https://pcstrategyandopsco.github.io/activecampaignr/articles/ad-effectiveness.md):
 - [Interactive Deal Dashboard with
   Shiny](https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.md):
 - [Campaign ROI Report with

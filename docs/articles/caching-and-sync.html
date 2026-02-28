@@ -61,74 +61,288 @@
     
     
 <div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+<h2 id="why-cache">Why Cache?<a class="anchor" aria-label="anchor" href="#why-cache"></a>
 </h2>
-<p>activecampaignr uses an RDS-based cache to avoid redundant API calls.
-The sync functions implement a three-tier strategy:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Cache hit</strong> — If data was fetched within the TTL,
-return it instantly</li>
-<li>
-<strong>Incremental sync</strong> — If stored data exists, only
-fetch recent changes and merge them</li>
-<li>
-<strong>Full sync</strong> — Fetch everything from scratch</li>
-</ol>
+<p>ActiveCampaign’s API rate limit is 5 requests per second. A CRM with
+2,000 deals requires 20 paginated requests just to list them. If your
+analysis script runs multiple times a day, or you’re iterating on a
+report, those redundant API calls add up fast:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Scenario</th>
+<th>Without cache</th>
+<th>With cache</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>First run (2,000 deals + custom fields)</td>
+<td>~40 API calls, ~12 sec</td>
+<td>Same (cache is cold)</td>
+</tr>
+<tr class="even">
+<td>Second run 5 minutes later</td>
+<td>~40 API calls, ~12 sec</td>
+<td>0 API calls, &lt;0.1 sec</td>
+</tr>
+<tr class="odd">
+<td>Third run 15 minutes later</td>
+<td>~40 API calls, ~12 sec</td>
+<td>~4 API calls, ~2 sec (incremental)</td>
+</tr>
+<tr class="even">
+<td>Script crash mid-analysis, re-run</td>
+<td>~40 API calls, ~12 sec</td>
+<td>0 API calls, &lt;0.1 sec</td>
+</tr>
+</tbody>
+</table>
+<p>The cache is especially valuable during development when you’re
+re-running <code>source("analysis.R")</code> repeatedly.</p>
 </div>
 <div class="section level2">
 <h2 id="how-it-works">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<p>activecampaignr uses a three-tier strategy:</p>
+<pre><code>Request comes in
+  │
+  ├─ Tier 1: CACHE HIT
+  │   Cache file exists and is younger than TTL?
+  │   → Return cached data instantly (no API calls)
+  │
+  ├─ Tier 2: INCREMENTAL SYNC
+  │   Cache file exists but is stale?
+  │   → Fetch only records modified in the last N days
+  │   → Merge with stored data (replace updated, add new)
+  │   → Save merged result to cache
+  │
+  └─ Tier 3: FULL SYNC
+      No cache file, or force = TRUE?
+      → Fetch everything from the API
+      → Save to cache</code></pre>
+<div class="section level3">
+<h3 id="basic-usage">Basic Usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
+</h3>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pcstrategyandopsco.github.io/activecampaignr/">activecampaignr</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/ac_auth_from_env.html">ac_auth_from_env</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># The sync function handles everything:</span></span>
+<span><span class="co"># The sync function handles the strategy automatically</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_deals.html">ac_sync_deals</a></span><span class="op">(</span></span>
-<span>  lookback_days <span class="op">=</span> <span class="fl">5</span>,     <span class="co"># How far back to check for changes</span></span>
+<span>  lookback_days <span class="op">=</span> <span class="fl">5</span>,           <span class="co"># Tier 2: how far back to check</span></span>
+<span>  ttl_minutes <span class="op">=</span> <span class="fl">10</span>,            <span class="co"># Tier 1: cache freshness threshold</span></span>
+<span>  force <span class="op">=</span> <span class="cn">FALSE</span>,               <span class="co"># Set TRUE to skip straight to Tier 3</span></span>
+<span>  include_custom_fields <span class="op">=</span> <span class="cn">TRUE</span> <span class="co"># Also cache custom fields</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  ttl_minutes <span class="op">=</span> <span class="fl">10</span>,      <span class="co"># Cache freshness threshold</span></span>
-<span>  force <span class="op">=</span> <span class="cn">FALSE</span>,         <span class="co"># Set TRUE to bypass cache</span></span>
-<span>  include_custom_fields <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">deals</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">deals</span></span>
+<span><span class="va">custom_fields</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">custom_fields</span></span></code></pre></div>
+</div>
 <div class="section level3">
-<h3 id="cache-storage">Cache Storage<a class="anchor" aria-label="anchor" href="#cache-storage"></a>
+<h3 id="merge-strategy">Merge Strategy<a class="anchor" aria-label="anchor" href="#merge-strategy"></a>
 </h3>
-<p>By default, cache files are stored in
-<code>~/.activecampaignr/cache/</code>:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check current cache directory</span></span>
+<p>When performing incremental sync, the merge works by ID:</p>
+<pre><code>Stored:  [A v1, B v1, C v1]   (1,000 records from last full sync)
+Fetched: [B v2, D v1]         (2 records changed in last 5 days)
+Result:  [A v1, B v2, C v1, D v1]  (1,001 records)</code></pre>
+<ul>
+<li>Record B was updated: old version replaced with new</li>
+<li>Record D is new: appended</li>
+<li>Record A and C were unchanged: kept as-is</li>
+</ul>
+<p>This means incremental sync fetches 2 records instead of 1,001,
+saving ~10 seconds and ~19 API calls.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="cache-storage">Cache Storage<a class="anchor" aria-label="anchor" href="#cache-storage"></a>
+</h2>
+<p>Cache files are standard R RDS files stored in a single
+directory.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Default location</span></span>
 <span><span class="fu"><a href="../reference/ac_cache_path.html">ac_cache_path</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># "~/.activecampaignr/cache"</span></span>
 <span></span>
-<span><span class="co"># Change cache directory</span></span>
-<span><span class="fu"><a href="../reference/ac_cache_path.html">ac_cache_path</a></span><span class="op">(</span><span class="st">"~/my-project/cache"</span><span class="op">)</span></span>
+<span><span class="co"># Change it (e.g., project-local cache)</span></span>
+<span><span class="fu"><a href="../reference/ac_cache_path.html">ac_cache_path</a></span><span class="op">(</span><span class="st">"~/my-project/.cache"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># See what's cached</span></span>
-<span><span class="fu"><a href="../reference/ac_cache_status.html">ac_cache_status</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># Or set at auth time</span></span>
+<span><span class="fu"><a href="../reference/ac_auth_from_env.html">ac_auth_from_env</a></span><span class="op">(</span>cache_dir <span class="op">=</span> <span class="st">"~/my-project/.cache"</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="inspecting-the-cache">Inspecting the Cache<a class="anchor" aria-label="anchor" href="#inspecting-the-cache"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ac_cache_status.html">ac_cache_status</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co"># # A tibble: 3 x 5</span></span>
 <span><span class="co">#   key                  rows age_minutes size_kb path</span></span>
 <span><span class="co">#   &lt;chr&gt;               &lt;int&gt;       &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;</span></span>
 <span><span class="co"># 1 contacts             2340       15.2    450.1 ~/.activecampaignr/cache/contacts.rds</span></span>
 <span><span class="co"># 2 deal_custom_fields    890        5.3    120.5 ~/.activecampaignr/cache/deal_custom_fields.rds</span></span>
 <span><span class="co"># 3 deals                 890        5.3    280.8 ~/.activecampaignr/cache/deals.rds</span></span></code></pre></div>
+<p>You can also read cache files directly if needed:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Read a cache file manually</span></span>
+<span><span class="va">deals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"~/.activecampaignr/cache/deals.rds"</span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="flushing-the-cache">Flushing the Cache<a class="anchor" aria-label="anchor" href="#flushing-the-cache"></a>
+</h2>
+<div class="section level3">
+<h3 id="clear-everything">Clear everything<a class="anchor" aria-label="anchor" href="#clear-everything"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># i Removed 3 cached files</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="merge-strategy">Merge Strategy<a class="anchor" aria-label="anchor" href="#merge-strategy"></a>
+<h3 id="clear-a-specific-entity">Clear a specific entity<a class="anchor" aria-label="anchor" href="#clear-a-specific-entity"></a>
 </h3>
-<p>When doing incremental sync, new/updated records replace old
-ones:</p>
-<pre><code>Stored: [A1, B1, C1]  (1000 records)
-Fetched: [B2, D1]     (2 records modified in last 5 days)
-Merged:  [A1, B2, C1, D1]  (1001 records — B updated, D added)</code></pre>
-<p>The merge uses the record ID as the key: old versions are removed,
-new versions are appended, then deduplicated.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="st">"deals"</span><span class="op">)</span>           <span class="co"># Just deals</span></span>
+<span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="st">"deal_custom_fields"</span><span class="op">)</span>  <span class="co"># Just custom fields</span></span>
+<span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="st">"contacts"</span><span class="op">)</span>        <span class="co"># Just contacts</span></span></code></pre></div>
 </div>
+<div class="section level3">
+<h3 id="force-a-fresh-sync">Force a fresh sync<a class="anchor" aria-label="anchor" href="#force-a-fresh-sync"></a>
+</h3>
+<p>Instead of clearing and re-fetching separately, use
+<code>force = TRUE</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Equivalent to: clear + full sync in one step</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_deals.html">ac_sync_deals</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="nuclear-option-delete-the-cache-directory">Nuclear option: delete the cache directory<a class="anchor" aria-label="anchor" href="#nuclear-option-delete-the-cache-directory"></a>
+</h3>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="fu"><a href="../reference/ac_cache_path.html">ac_cache_path</a></span><span class="op">(</span><span class="op">)</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="when-to-flush">When to Flush<a class="anchor" aria-label="anchor" href="#when-to-flush"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Situation</th>
+<th>Action</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>New custom fields added in AC</td>
+<td><code>ac_cache_clear("deal_custom_fields")</code></td>
+</tr>
+<tr class="even">
+<td>Deals moved/deleted in bulk via AC UI</td>
+<td><code>ac_sync_deals(force = TRUE)</code></td>
+</tr>
+<tr class="odd">
+<td>Switching between AC accounts</td>
+<td>
+<code><a href="../reference/ac_cache_clear.html">ac_cache_clear()</a></code> then re-auth</td>
+</tr>
+<tr class="even">
+<td>Cache seems corrupt or stale</td>
+<td><code><a href="../reference/ac_cache_clear.html">ac_cache_clear()</a></code></td>
+</tr>
+<tr class="odd">
+<td>Routine analysis re-runs</td>
+<td>Do nothing (cache handles it)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="gotchas">Gotchas<a class="anchor" aria-label="anchor" href="#gotchas"></a>
+</h2>
+<div class="section level3">
+<h3 id="deleted-records-stay-in-cache">Deleted records stay in cache<a class="anchor" aria-label="anchor" href="#deleted-records-stay-in-cache"></a>
+</h3>
+<p>ActiveCampaign’s <code>updated_after</code> filter returns modified
+records, but it does not tell you about deleted records. If a deal is
+deleted in AC, incremental sync won’t remove it from your cached
+data.</p>
+<p><strong>Fix:</strong> Run a full sync periodically (e.g., daily):</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Weekly full refresh in a scheduled script</span></span>
+<span><span class="fu"><a href="../reference/ac_sync_deals.html">ac_sync_deals</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="ttl-is-per-file-not-per-session">TTL is per-file, not per-session<a class="anchor" aria-label="anchor" href="#ttl-is-per-file-not-per-session"></a>
+</h3>
+<p>The TTL is based on the cache file’s last-modified time on disk, not
+when you started your R session. If another script updates the cache
+file, your session will pick up that data on the next sync call.</p>
+</div>
+<div class="section level3">
+<h3 id="custom-fields-are-not-incrementally-synced">Custom fields are not incrementally synced<a class="anchor" aria-label="anchor" href="#custom-fields-are-not-incrementally-synced"></a>
+</h3>
+<p><code>ac_sync_deals(include_custom_fields = TRUE)</code> re-fetches
+all custom field values on every non-cache-hit call. The AC API does not
+support <code>updated_after</code> filtering on custom field values, so
+incremental sync is not possible for them.</p>
+<p>For large accounts, custom field fetching is the slowest part. If you
+only need deal metadata (no custom fields), set
+<code>include_custom_fields = FALSE</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_deals.html">ac_sync_deals</a></span><span class="op">(</span>include_custom_fields <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="cache-is-not-shared-across-machines">Cache is not shared across machines<a class="anchor" aria-label="anchor" href="#cache-is-not-shared-across-machines"></a>
+</h3>
+<p>The cache is local to the machine and user. If you run the same
+pipeline on CI or a different laptop, it starts with a cold cache.
+Consider committing a seed cache file to your project repo if cold start
+time matters.</p>
+</div>
+<div class="section level3">
+<h3 id="multiple-ac-accounts">Multiple AC accounts<a class="anchor" aria-label="anchor" href="#multiple-ac-accounts"></a>
+</h3>
+<p>The cache directory is shared by default. If you switch between AC
+accounts, flush the cache first:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Switch accounts safely</span></span>
+<span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/ac_auth.html">ac_auth</a></span><span class="op">(</span>url <span class="op">=</span> <span class="st">"https://other-account.api-us1.com"</span>, api_key <span class="op">=</span> <span class="st">"..."</span><span class="op">)</span></span></code></pre></div>
+<p>Or use separate cache directories per account:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ac_auth.html">ac_auth</a></span><span class="op">(</span>url <span class="op">=</span> <span class="st">"https://account-a.api-us1.com"</span>, api_key <span class="op">=</span> <span class="st">"..."</span>,</span>
+<span>        cache_dir <span class="op">=</span> <span class="st">"~/.activecampaignr/cache-a"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/ac_auth.html">ac_auth</a></span><span class="op">(</span>url <span class="op">=</span> <span class="st">"https://account-b.api-us1.com"</span>, api_key <span class="op">=</span> <span class="st">"..."</span>,</span>
+<span>        cache_dir <span class="op">=</span> <span class="st">"~/.activecampaignr/cache-b"</span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="the-ac_cache-helper">The <code>ac_cache()</code> Helper<a class="anchor" aria-label="anchor" href="#the-ac_cache-helper"></a>
+</h2>
+<p>For custom caching scenarios, use the low-level
+<code><a href="../reference/ac_cache.html">ac_cache()</a></code> function:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Cache any expensive computation</span></span>
+<span><span class="va">pipelines</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_cache.html">ac_cache</a></span><span class="op">(</span><span class="st">"pipelines"</span>, <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/ac_deal_pipelines.html">ac_deal_pipelines</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span>, ttl_minutes <span class="op">=</span> <span class="fl">60</span><span class="op">)</span>  <span class="co"># Pipelines rarely change</span></span>
+<span></span>
+<span><span class="co"># Force refresh</span></span>
+<span><span class="va">pipelines</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_cache.html">ac_cache</a></span><span class="op">(</span><span class="st">"pipelines"</span>, <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/ac_deal_pipelines.html">ac_deal_pipelines</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span>, force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="parallel-sync-with-future">Parallel Sync with future<a class="anchor" aria-label="anchor" href="#parallel-sync-with-future"></a>
 </h2>
 <p>For production pipelines, sync deals and contacts in parallel:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -153,31 +367,28 @@ new versions are appended, then deduplicated.</p>
 <span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">sequential</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="the-ac_cache-helper">The <code>ac_cache()</code> Helper<a class="anchor" aria-label="anchor" href="#the-ac_cache-helper"></a>
+<h2 id="recommended-production-pattern">Recommended Production Pattern<a class="anchor" aria-label="anchor" href="#recommended-production-pattern"></a>
 </h2>
-<p>For custom caching scenarios, use the low-level
-<code><a href="../reference/ac_cache.html">ac_cache()</a></code> function:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Cache any expensive computation</span></span>
-<span><span class="va">pipelines</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_cache.html">ac_cache</a></span><span class="op">(</span><span class="st">"pipelines"</span>, <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/ac_deal_pipelines.html">ac_deal_pipelines</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">}</span>, ttl_minutes <span class="op">=</span> <span class="fl">60</span><span class="op">)</span>  <span class="co"># Pipelines rarely change</span></span>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pcstrategyandopsco.github.io/activecampaignr/">activecampaignr</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/ac_auth_from_env.html">ac_auth_from_env</a></span><span class="op">(</span>cache_dir <span class="op">=</span> <span class="st">"data/cache"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Force refresh</span></span>
-<span><span class="va">pipelines</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_cache.html">ac_cache</a></span><span class="op">(</span><span class="st">"pipelines"</span>, <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/ac_deal_pipelines.html">ac_deal_pipelines</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">}</span>, force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="clearing-cache">Clearing Cache<a class="anchor" aria-label="anchor" href="#clearing-cache"></a>
-</h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Clear everything</span></span>
-<span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># Daily scheduled script</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_deals.html">ac_sync_deals</a></span><span class="op">(</span></span>
+<span>  lookback_days <span class="op">=</span> <span class="fl">7</span>,    <span class="co"># Generous lookback covers weekends</span></span>
+<span>  ttl_minutes <span class="op">=</span> <span class="fl">0</span>,      <span class="co"># Always do at least incremental</span></span>
+<span>  force <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">contacts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_contacts.html">ac_sync_contacts</a></span><span class="op">(</span>lookback_days <span class="op">=</span> <span class="fl">7</span>, ttl_minutes <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Clear a specific entity</span></span>
-<span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="st">"deals"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/ac_cache_clear.html">ac_cache_clear</a></span><span class="op">(</span><span class="st">"contacts"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Weekly: force full refresh to catch deletions</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/weekday.POSIXt.html" class="external-link">weekdays</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="st">"Monday"</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_deals.html">ac_sync_deals</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>  <span class="va">contacts</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_sync_contacts.html">ac_sync_contacts</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Analyse</span></span>
+<span><span class="va">deals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ac_deals_full.html">ac_deals_full</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

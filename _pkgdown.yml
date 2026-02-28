@@ -26,6 +26,7 @@ articles:
 - title: Analysis Examples
   contents:
   - pipeline-analysis
+  - ad-effectiveness
   - shiny-deal-dashboard
   - campaign-roi
 
@@ -48,7 +49,15 @@ reference:
   - ac_deal_custom_fields
   - ac_deal_custom_field_values
   - ac_deal_custom_fields_wide
+
+- title: Join Helpers (Deals)
+  contents:
+  - ac_join
   - ac_join_deal_fields
+  - ac_join_deal_stages
+  - ac_join_deal_pipelines
+  - ac_join_deal_owners
+  - ac_deals_full
 
 - title: Deal Activities
   contents:
@@ -72,7 +81,12 @@ reference:
   contents:
   - ac_contact_custom_fields
   - ac_contact_custom_fields_wide
+
+- title: Join Helpers (Contacts)
+  contents:
   - ac_join_contact_fields
+  - ac_join_contact_tags
+  - ac_contacts_full
 
 - title: Contact Tags
   contents:

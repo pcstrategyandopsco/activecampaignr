@@ -29,6 +29,21 @@
 - [`ac_deal_custom_fields_wide()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deal_custom_fields_wide.md)
   : Get Deal Custom Fields in Wide Format
 
+## Join Helpers (Deals)
+
+- [`ac_join`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join.md)
+  : ActiveCampaign Join Helpers
+- [`ac_join_deal_fields()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_fields.md)
+  : Join Deals with Custom Fields
+- [`ac_join_deal_stages()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_stages.md)
+  : Join Deals with Stage Names
+- [`ac_join_deal_pipelines()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_pipelines.md)
+  : Join Deals with Pipeline Names
+- [`ac_join_deal_owners()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_owners.md)
+  : Join Deals with Owner Names
+- [`ac_deals_full()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deals_full.md)
+  : Get Deals with All Related Data
+
 ## Deal Activities
 
 - [`ac_deal_activities()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deal_activities.md)
@@ -62,6 +77,15 @@
   : ActiveCampaign Contact Custom Fields
 - [`ac_contact_custom_fields_wide()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_contact_custom_fields_wide.md)
   : Get Contact Custom Fields in Wide Format
+
+## Join Helpers (Contacts)
+
+- [`ac_join_contact_fields()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_contact_fields.md)
+  : Join Contacts with Custom Fields
+- [`ac_join_contact_tags()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_contact_tags.md)
+  : Join Contacts with Tags
+- [`ac_contacts_full()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_contacts_full.md)
+  : Get Contacts with All Related Data
 
 ## Contact Tags
 
@@ -155,4 +179,4 @@
 - [`ac_utils`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_utils.md)
   : ActiveCampaign Utilities
 - [`ac_standardize_phone()`](https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_standardize_phone.md)
-  : Standardize Phone Number (NZ/AU)
+  : Standardize Phone Number

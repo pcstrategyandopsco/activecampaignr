@@ -54,51 +54,25 @@
 
 <p>A <strong>tidy</strong>, <strong>cached</strong>, and <strong>MCP-ready</strong> R client for the <a href="https://developers.activecampaign.com/reference/overview" class="external-link">ActiveCampaign API v3</a>.</p>
 <div class="section level2">
-<h2 id="why-this-package">Why This Package?<a class="anchor" aria-label="anchor" href="#why-this-package"></a>
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>This package builds on the foundation laid by <a href="https://github.com/rwColumn/ractivecampaign" class="external-link"><code>ractivecampaign</code></a>, which pioneered R access to the ActiveCampaign API. We’re grateful for that work. It proved the value of an R-native AC client and informed many of the patterns used here.</p>
-<p>However, production use at scale revealed gaps that warranted a ground-up rebuild:</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr>
-<th>Capability</th>
-<th>Detail</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>Broader API coverage</td>
-<td>
-<code>ractivecampaign</code> covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks</td>
-</tr>
-<tr>
-<td>Automatic pagination</td>
-<td>Fetching thousands of records shouldn’t require manual offset loops</td>
-</tr>
-<tr>
-<td>Caching and incremental sync</td>
-<td>Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes</td>
-</tr>
-<tr>
-<td>Modern HTTP backend</td>
-<td>Built on httr2 with native rate limiting (<code>req_throttle</code>) and retry with exponential backoff (<code>req_retry</code>), replacing manual <code><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep()</a></code> and <code>retry()</code> calls</td>
-</tr>
-<tr>
-<td>Custom field pivot</td>
-<td>ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field)</td>
-</tr>
-<tr>
-<td>MCP integration</td>
-<td>Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data</td>
-</tr>
-<tr>
-<td>Write operations</td>
-<td>Full CRUD (create, read, update, delete) for all entities, not just read</td>
-</tr>
-</tbody>
-</table>
+<p><code>activecampaignr</code> gives R users direct analytic access to their ActiveCampaign CRM. Pull your full deal pipeline into a tibble, join custom fields in wide format, and feed the result straight into dplyr, ggplot2, or Shiny without writing a single API call by hand. Built-in caching means repeated analysis runs hit disk instead of the API, and incremental sync keeps your local data current without re-fetching everything.</p>
+<p>The dataframes are correctly typed, and a number of convenience functions are included to make it easier to join data and perform analysis.</p>
+<p>Typical use cases:</p>
+<ul>
+<li>
+<strong>Pipeline analytics</strong> — win rates by owner, stage, pathway, or time period; funnel conversion rates; deal velocity (days per stage)</li>
+<li>
+<strong>Contact enrichment</strong> — merge CRM contacts with external data via email or phone, with NZ/AU phone normalization built in</li>
+<li>
+<strong>Campaign performance</strong> — open rates, click rates, and revenue attribution across campaigns</li>
+<li>
+<strong>Custom field analysis</strong> — pivot ActiveCampaign’s long-format custom fields into one-row-per-deal wide format ready for modelling or reporting</li>
+<li>
+<strong>Automated reporting</strong> — combine with officer for PowerPoint/Word reports or Shiny for interactive dashboards</li>
+<li>
+<strong>AI-assisted CRM queries</strong> — expose your pipeline as MCP tools so AI assistants can answer natural language questions about your deals and contacts</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
@@ -210,12 +184,63 @@
 <td>Win rates, velocity, PowerPoint reports</td>
 </tr>
 <tr>
+<td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/ad-effectiveness.html">Ad Effectiveness</a></td>
+<td>CPL, CPS, velocity, windowed attribution</td>
+</tr>
+<tr>
 <td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.html">Shiny Deal Dashboard</a></td>
 <td>Interactive deal explorer</td>
 </tr>
 <tr>
 <td><a href="https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html">Campaign ROI</a></td>
 <td>Campaign performance Word report</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="why-this-package">Why This Package?<a class="anchor" aria-label="anchor" href="#why-this-package"></a>
+</h2>
+<p>This package builds on the foundation laid by <a href="https://github.com/rwColumn/ractivecampaign" class="external-link"><code>ractivecampaign</code></a>, which pioneered R access to the ActiveCampaign API. I’m grateful for that work. It proved the value of an R-native AC client and informed many of the patterns used here.</p>
+<p>However, production use at scale revealed gaps that warranted a ground-up rebuild:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Capability</th>
+<th>Detail</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Broader API coverage</td>
+<td>
+<code>ractivecampaign</code> covers deals and contacts; production CRM pipelines need accounts, campaigns, tasks, tags, lists, automations, and webhooks</td>
+</tr>
+<tr>
+<td>Automatic pagination</td>
+<td>Fetching thousands of records shouldn’t require manual offset loops</td>
+</tr>
+<tr>
+<td>Caching and incremental sync</td>
+<td>Repeated API calls for unchanged data waste time and hit rate limits; this package caches to RDS and only fetches recent changes</td>
+</tr>
+<tr>
+<td>Modern HTTP backend</td>
+<td>Built on httr2 with native rate limiting (<code>req_throttle</code>) and retry with exponential backoff (<code>req_retry</code>), replacing manual <code><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep()</a></code> and <code>retry()</code> calls</td>
+</tr>
+<tr>
+<td>Custom field pivot</td>
+<td>ActiveCampaign stores custom fields in long format (one row per field); this package provides wide format out of the box (one row per entity, one column per field)</td>
+</tr>
+<tr>
+<td>MCP integration</td>
+<td>Expose your CRM as tools for AI assistants via mcptools, enabling natural language queries against your deal and contact data</td>
+</tr>
+<tr>
+<td>Write operations</td>
+<td>Full CRUD (create, read, update, delete) for all entities, not just read</td>
 </tr>
 </tbody>
 </table>

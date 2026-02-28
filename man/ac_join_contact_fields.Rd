@@ -19,10 +19,7 @@ them by contact ID. Prints a diagnostic summary showing match counts.
 }
 \examples{
 \dontrun{
-# All contacts with custom fields
 contacts <- ac_join_contact_fields()
-
-# Search with custom fields
 contacts <- ac_join_contact_fields(email = "user@example.com")
 }
 }

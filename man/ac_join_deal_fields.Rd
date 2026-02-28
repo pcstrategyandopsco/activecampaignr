@@ -19,10 +19,7 @@ them by deal ID. Prints a diagnostic summary showing match counts.
 }
 \examples{
 \dontrun{
-# All deals with custom fields
 deals <- ac_join_deal_fields()
-
-# Won deals with custom fields
 deals <- ac_join_deal_fields(status = 1)
 }
 }

@@ -4,6 +4,6 @@
 \alias{ac_join}
 \title{ActiveCampaign Join Helpers}
 \description{
-Convenience functions that fetch entities and their custom
-fields, join them, and report match diagnostics.
+Convenience functions that fetch entities and their related
+data, join them, and report match diagnostics.
 }

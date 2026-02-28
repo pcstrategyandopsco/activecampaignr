@@ -75,6 +75,7 @@ deals <- result$deals
 | [Caching and Sync](https://pcstrategyandopsco.github.io/activecampaignr/articles/caching-and-sync.html) | Incremental sync, parallel with future |
 | [MCP Integration](https://pcstrategyandopsco.github.io/activecampaignr/articles/mcp-integration.html) | AI assistant tool setup |
 | [Pipeline Analysis](https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.html) | Win rates, velocity, PowerPoint reports |
+| [Ad Effectiveness](https://pcstrategyandopsco.github.io/activecampaignr/articles/ad-effectiveness.html) | CPL, CPS, velocity, windowed attribution |
 | [Shiny Deal Dashboard](https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.html) | Interactive deal explorer |
 | [Campaign ROI](https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html) | Campaign performance Word report |
 

@@ -3,6 +3,7 @@
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/CLAUDE.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/LICENSE-text.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/LICENSE.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/articles/ad-effectiveness.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/articles/caching-and-sync.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/articles/getting-started.html</loc></url>
@@ -32,6 +33,7 @@
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_contact_tags.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_contact_url.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_contacts.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_contacts_full.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_create_account.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_create_contact.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_create_deal.html</loc></url>
@@ -49,11 +51,19 @@
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deal_won_date.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deal_won_dates.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deals.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_deals_full.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_delete_deal.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_delete_one.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_delete_webhook.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_get_one.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_get_tz.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_contact_fields.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_contact_tags.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_fields.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_owners.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_pipelines.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_join_deal_stages.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_list_contacts.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_lists.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_mcp_server.html</loc></url>
@@ -66,6 +76,7 @@
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_remove_tag.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_request.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_standardize_phone.html</loc></url>
+<url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_standardize_phone_nzau.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_sync.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_sync_contacts.html</loc></url>
 <url><loc>https://pcstrategyandopsco.github.io/activecampaignr/reference/ac_sync_deals.html</loc></url>
