@@ -65,12 +65,12 @@ deals <- result$deals
 
 ## Vignettes
 
-- [Getting Started](vignettes/getting-started.Rmd) — Auth, first API call, caching
-- [Caching and Sync](vignettes/caching-and-sync.Rmd) — Incremental sync, parallel with future
-- [MCP Integration](vignettes/mcp-integration.Rmd) — AI assistant tool setup
-- [Pipeline Analysis](vignettes/pipeline-analysis.Rmd) — Win rates, velocity, PowerPoint reports
-- [Shiny Deal Dashboard](vignettes/shiny-deal-dashboard.Rmd) — Interactive deal explorer
-- [Campaign ROI](vignettes/campaign-roi.Rmd) — Campaign performance Word report
+- [Getting Started](https://pcstrategyandopsco.github.io/activecampaignr/articles/getting-started.html) — Auth, first API call, caching
+- [Caching and Sync](https://pcstrategyandopsco.github.io/activecampaignr/articles/caching-and-sync.html) — Incremental sync, parallel with future
+- [MCP Integration](https://pcstrategyandopsco.github.io/activecampaignr/articles/mcp-integration.html) — AI assistant tool setup
+- [Pipeline Analysis](https://pcstrategyandopsco.github.io/activecampaignr/articles/pipeline-analysis.html) — Win rates, velocity, PowerPoint reports
+- [Shiny Deal Dashboard](https://pcstrategyandopsco.github.io/activecampaignr/articles/shiny-deal-dashboard.html) — Interactive deal explorer
+- [Campaign ROI](https://pcstrategyandopsco.github.io/activecampaignr/articles/campaign-roi.html) — Campaign performance Word report
 
 ## Acknowledgements
 
