@@ -4,6 +4,9 @@ A **tidy**, **cached**, and **MCP-ready** R client for the
 [ActiveCampaign API
 v3](https://developers.activecampaign.com/reference/overview).
 
+**Documentation:**
+[pcstrategyandopsco.github.io/activecampaignr](https://pcstrategyandopsco.github.io/activecampaignr/)
+
 ## Overview
 
 `activecampaignr` gives R users direct analytic access to their

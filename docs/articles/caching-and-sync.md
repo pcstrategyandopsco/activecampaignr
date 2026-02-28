@@ -21,22 +21,14 @@ re-running `source("analysis.R")` repeatedly.
 
 activecampaignr uses a three-tier strategy:
 
-    Request comes in
-      │
-      ├─ Tier 1: CACHE HIT
-      │   Cache file exists and is younger than TTL?
-      │   → Return cached data instantly (no API calls)
-      │
-      ├─ Tier 2: INCREMENTAL SYNC
-      │   Cache file exists but is stale?
-      │   → Fetch only records modified in the last N days
-      │   → Merge with stored data (replace updated, add new)
-      │   → Save merged result to cache
-      │
-      └─ Tier 3: FULL SYNC
-          No cache file, or force = TRUE?
-          → Fetch everything from the API
-          → Save to cache
+![Caching flow diagram showing three tiers: cache hit, incremental sync,
+and full sync](figures/caching-flow.png)
+
+| Tier | Condition | Action | API calls |
+|----|----|----|----|
+| 1\. Cache hit | Cache file exists and age \< TTL | Return cached data | 0 |
+| 2\. Incremental sync | Cache exists but stale | Fetch records modified in last N days, merge by ID | Few |
+| 3\. Full sync | No cache file, or `force = TRUE` | Fetch everything from the API | All |
 
 ### Basic Usage
 

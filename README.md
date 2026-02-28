@@ -6,6 +6,8 @@
 
 A **tidy**, **cached**, and **MCP-ready** R client for the [ActiveCampaign API v3](https://developers.activecampaign.com/reference/overview).
 
+**Documentation:** [pcstrategyandopsco.github.io/activecampaignr](https://pcstrategyandopsco.github.io/activecampaignr/)
+
 ## Overview
 
 `activecampaignr` gives R users direct analytic access to their ActiveCampaign CRM. Pull your full deal pipeline into a tibble, join custom fields in wide format, and feed the result straight into dplyr, ggplot2, or Shiny without writing a single API call by hand. Built-in caching means repeated analysis runs hit disk instead of the API, and incremental sync keeps your local data current without re-fetching everything.

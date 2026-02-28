@@ -1,0 +1,37 @@
+digraph caching_flow {
+  rankdir=TB;
+  fontname="Helvetica";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f8f9fa", color="#dee2e6"];
+  edge [fontname="Helvetica", fontsize=10, color="#6c757d"];
+
+  // Entry
+  request [label="ac_sync_deals()\nor ac_sync_contacts()", fillcolor="#356AE6", fontcolor="white", color="#356AE6"];
+
+  // Decision nodes
+  cache_exists [label="Cache file\nexists?", shape=diamond, fillcolor="#fff3cd", color="#ffc107"];
+  cache_fresh [label="Age < TTL?", shape=diamond, fillcolor="#fff3cd", color="#ffc107"];
+  force_check [label="force = TRUE?", shape=diamond, fillcolor="#fff3cd", color="#ffc107"];
+
+  // Tier boxes
+  tier1 [label="Tier 1: CACHE HIT\nReturn cached data\n(0 API calls)", fillcolor="#d4edda", color="#28a745"];
+  tier2 [label="Tier 2: INCREMENTAL SYNC\nFetch modified_after = now - lookback_days\nMerge by ID: update changed, add new", fillcolor="#cce5ff", color="#007bff"];
+  tier3 [label="Tier 3: FULL SYNC\nFetch all records from API\nReplace entire cache", fillcolor="#f8d7da", color="#dc3545"];
+
+  // Output
+  save_cache [label="Save to RDS", shape=box, fillcolor="#e2e3e5", color="#6c757d"];
+  output [label="Return tibble\nto caller", fillcolor="#356AE6", fontcolor="white", color="#356AE6"];
+
+  // Edges
+  request -> force_check;
+  force_check -> tier3 [label="  yes"];
+  force_check -> cache_exists [label="  no"];
+  cache_exists -> tier3 [label="  no"];
+  cache_exists -> cache_fresh [label="  yes"];
+  cache_fresh -> tier1 [label="  yes"];
+  cache_fresh -> tier2 [label="  no"];
+
+  tier1 -> output;
+  tier2 -> save_cache;
+  tier3 -> save_cache;
+  save_cache -> output;
+}
