@@ -62,3 +62,35 @@ test_that("ac_coerce_types converts date columns", {
   expect_s3_class(result$cdate, "POSIXct")
   expect_s3_class(result$mdate, "POSIXct")
 })
+
+test_that("ac_perform wraps HTTP errors with AC message", {
+  # Simulate an httr2 HTTP error with an AC JSON response body
+  local_mocked_bindings(
+    req_perform = function(req) {
+      # Build a fake response with AC error JSON
+      resp <- httr2::response(
+        status_code = 422L,
+        headers = "Content-Type: application/json",
+        body = charToRaw(
+          '{"message":"Unprocessable Entity","errors":[{"title":"Email is invalid"}]}'
+        )
+      )
+      # Throw an httr2-style HTTP error condition
+      cnd <- rlang::error_cnd(
+        message = "HTTP 422 Unprocessable Entity",
+        class = c("httr2_http_422", "httr2_http_error"),
+        resp = resp,
+        response = resp
+      )
+      stop(cnd)
+    },
+    .package = "httr2"
+  )
+
+  fake_req <- httr2::request("https://fake.api-us1.com/api/3/contacts")
+
+  expect_error(
+    activecampaignr:::ac_perform(fake_req),
+    "ActiveCampaign API error"
+  )
+})

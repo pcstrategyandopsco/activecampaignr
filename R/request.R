@@ -45,7 +45,36 @@ ac_request <- function(endpoint, method = "GET", body = NULL, query = NULL) {
 #' @return Parsed response body as a list
 #' @keywords internal
 ac_perform <- function(req) {
-  resp <- httr2::req_perform(req)
+  resp <- tryCatch(
+    httr2::req_perform(req),
+    httr2_http_error = function(cnd) {
+      # Try to extract AC's error message from the response body
+      resp <- cnd$resp %||% cnd$response
+      ac_msg <- NULL
+      if (!is.null(resp)) {
+        body <- tryCatch(httr2::resp_body_json(resp), error = function(e) NULL)
+        if (!is.null(body$message)) {
+          detail <- body$message
+          errs <- body$errors
+          if (is.list(errs) && length(errs) > 0) {
+            titles <- vapply(errs, function(e) e$title %||% "", character(1))
+            titles <- titles[nzchar(titles)]
+            if (length(titles) > 0) {
+              detail <- paste0(detail, " - ", paste(titles, collapse = "; "))
+            }
+          }
+          ac_msg <- detail
+        }
+      }
+      status <- if (!is.null(resp)) httr2::resp_status(resp) else "unknown"
+      msg <- if (!is.null(ac_msg)) {
+        paste0("ActiveCampaign API error (", status, "): ", ac_msg)
+      } else {
+        paste0("ActiveCampaign API error (", status, ")")
+      }
+      cli::cli_abort(msg, parent = cnd)
+    }
+  )
   httr2::resp_body_json(resp)
 }
 

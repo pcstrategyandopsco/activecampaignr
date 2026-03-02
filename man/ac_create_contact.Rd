@@ -13,7 +13,7 @@ ac_create_contact(
 )
 }
 \arguments{
-\item{email}{Email address (required)}
+\item{email}{Email address (required). Validated locally before the API call.}
 
 \item{first_name}{First name}
 

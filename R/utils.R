@@ -134,6 +134,67 @@ ac_standardize_phone_nzau <- function(phone) {
   NA_character_
 }
 
+#' Validate an Email Address
+#'
+#' Performs local (no network) validation of an email address. Trims
+#' whitespace, checks structure (RFC 5321/5322 basics), and aborts with
+#' a clear error if invalid.
+#'
+#' @param email A single email string.
+#' @return The trimmed email string (invisibly). Aborts on invalid input.
+#' @keywords internal
+validate_email <- function(email) {
+  if (is.null(email) || length(email) != 1 || is.na(email)) {
+    cli::cli_abort("{.arg email} must be a non-NA string.")
+  }
+
+  email <- trimws(email)
+
+  if (!nzchar(email)) {
+    cli::cli_abort("{.arg email} must not be empty.")
+  }
+
+  if (grepl("\\s", email)) {
+    cli::cli_abort("{.arg email} must not contain whitespace: {.val {email}}")
+  }
+
+  at_count <- nchar(gsub("[^@]", "", email))
+  if (at_count != 1) {
+    cli::cli_abort("{.arg email} must contain exactly one {.code @}: {.val {email}}")
+  }
+
+  at_pos <- regexpr("@", email, fixed = TRUE)
+  local <- substr(email, 1, at_pos - 1)
+  domain <- substr(email, at_pos + 1, nchar(email))
+
+  if (!nzchar(local)) {
+    cli::cli_abort("{.arg email} has an empty local part: {.val {email}}")
+  }
+  if (!nzchar(domain)) {
+    cli::cli_abort("{.arg email} has an empty domain: {.val {email}}")
+  }
+
+  if (!grepl(".", domain, fixed = TRUE)) {
+    cli::cli_abort("{.arg email} domain must contain a dot: {.val {email}}")
+  }
+
+  # RFC 5322: no leading, trailing, or consecutive dots in local part
+  if (grepl("^\\.|\\.$|\\.\\.", local)) {
+    cli::cli_abort("{.arg email} local part has invalid dots: {.val {email}}")
+  }
+
+  # RFC 5321 length limits
+
+  if (nchar(local) > 64) {
+    cli::cli_abort("{.arg email} local part exceeds 64 characters: {.val {email}}")
+  }
+  if (nchar(domain) > 253) {
+    cli::cli_abort("{.arg email} domain exceeds 253 characters: {.val {email}}")
+  }
+
+  invisible(email)
+}
+
 #' Build an ActiveCampaign Deal URL
 #'
 #' @param deal_id Deal ID(s)

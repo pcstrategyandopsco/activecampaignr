@@ -46,7 +46,7 @@ ac_contact <- function(id) {
 
 #' Create a Contact
 #'
-#' @param email Email address (required)
+#' @param email Email address (required). Validated locally before the API call.
 #' @param first_name First name
 #' @param last_name Last name
 #' @param phone Phone number
@@ -55,6 +55,7 @@ ac_contact <- function(id) {
 #' @export
 ac_create_contact <- function(email, first_name = NULL, last_name = NULL,
                               phone = NULL, ...) {
+  email <- validate_email(email)
   body <- list(email = email)
   if (!is.null(first_name)) body$firstName <- first_name
   if (!is.null(last_name)) body$lastName <- last_name
@@ -72,5 +73,8 @@ ac_create_contact <- function(email, first_name = NULL, last_name = NULL,
 #' @export
 ac_update_contact <- function(id, ...) {
   body <- list(...)
+  if (!is.null(body$email)) {
+    body$email <- validate_email(body$email)
+  }
   ac_put_one(paste0("contacts/", id), "contact", body)
 }
