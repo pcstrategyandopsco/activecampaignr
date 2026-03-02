@@ -92,7 +92,7 @@ ac_paginate <- function(endpoint, entity_key, query = list(), limit = 100L,
   }
 
   if (length(results) == 0) {
-    return(tibble::tibble())
+    return(empty_schema(entity_key))
   }
 
   dplyr::bind_rows(results)
@@ -219,4 +219,92 @@ ac_delete_one <- function(endpoint) {
   req <- ac_request(endpoint, method = "DELETE")
   httr2::req_perform(req)
   invisible(TRUE)
+}
+
+#' Return a Typed Empty Tibble for a Known Entity
+#'
+#' When `ac_paginate()` gets zero results, this returns a 0-row tibble
+#' with the expected columns and types for that entity. Unknown entity
+#' keys fall back to a 0-column tibble.
+#'
+#' @param entity_key The API entity key (e.g., `"deals"`, `"contacts"`)
+#' @return A 0-row tibble with typed columns
+#' @keywords internal
+empty_schema <- function(entity_key) {
+  schemas <- list(
+    tags = tibble::tibble(
+      id = character(), tag = character(), tag_type = character(),
+      description = character(), cdate = as.POSIXct(character())
+    ),
+    contacts = tibble::tibble(
+      id = character(), email = character(), first_name = character(),
+      last_name = character(), phone = character(),
+      cdate = as.POSIXct(character()), mdate = as.POSIXct(character())
+    ),
+    deals = tibble::tibble(
+      id = character(), title = character(), value = numeric(),
+      currency = character(), status = character(), owner = character(),
+      contact = character(), group = character(), stage = character(),
+      cdate = as.POSIXct(character()), mdate = as.POSIXct(character())
+    ),
+    contactTags = tibble::tibble(
+      id = character(), contact = character(), tag = character(),
+      cdate = as.POSIXct(character())
+    ),
+    lists = tibble::tibble(
+      id = character(), name = character(), cdate = as.POSIXct(character())
+    ),
+    dealCustomFieldMeta = tibble::tibble(
+      id = character(), field_label = character(), field_type = character()
+    ),
+    dealCustomFieldData = tibble::tibble(
+      id = character(), deal_custom_field_meta_id = character(),
+      deal_id = character(), custom_field_value = character()
+    ),
+    fields = tibble::tibble(
+      id = character(), title = character(), type = character()
+    ),
+    fieldValues = tibble::tibble(
+      id = character(), contact = character(), field = character(),
+      value = character()
+    ),
+    accounts = tibble::tibble(
+      id = character(), name = character()
+    ),
+    webhooks = tibble::tibble(
+      id = character(), name = character(), url = character()
+    ),
+    campaigns = tibble::tibble(
+      id = character(), name = character(), type = character(),
+      status = character(), cdate = as.POSIXct(character()),
+      mdate = as.POSIXct(character())
+    ),
+    users = tibble::tibble(
+      id = character(), email = character(), first_name = character(),
+      last_name = character()
+    ),
+    automations = tibble::tibble(
+      id = character(), name = character(), status = character(),
+      cdate = as.POSIXct(character()), mdate = as.POSIXct(character())
+    ),
+    dealGroups = tibble::tibble(
+      id = character(), title = character(), currency = character()
+    ),
+    dealStages = tibble::tibble(
+      id = character(), title = character(), group = character(),
+      order = character()
+    ),
+    dealTasks = tibble::tibble(
+      id = character(), title = character(), deal_task_type = character(),
+      status = character()
+    ),
+    dealActivities = tibble::tibble(
+      id = character(), deal = character(), cdate = as.POSIXct(character())
+    ),
+    campaignMessages = tibble::tibble(
+      id = character(), message = character()
+    )
+  )
+
+  schemas[[entity_key]] %||% tibble::tibble()
 }

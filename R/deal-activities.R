@@ -18,7 +18,7 @@ ac_deal_activities <- function(deal_id) {
   data <- ac_perform(ac_request(endpoint))
   records <- data$dealActivities
   if (is.null(records) || length(records) == 0) {
-    return(tibble::tibble())
+    return(empty_schema("dealActivities"))
   }
   ac_parse_records(records)
 }

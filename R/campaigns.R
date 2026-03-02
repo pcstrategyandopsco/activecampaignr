@@ -21,6 +21,6 @@ ac_campaign_messages <- function(campaign_id) {
   endpoint <- paste0("campaigns/", campaign_id, "/messages")
   data <- ac_perform(ac_request(endpoint))
   records <- data$messages %||% data$campaignMessages
-  if (is.null(records) || length(records) == 0) return(tibble::tibble())
+  if (is.null(records) || length(records) == 0) return(empty_schema("campaignMessages"))
   ac_parse_records(records)
 }
