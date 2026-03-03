@@ -9,6 +9,10 @@ the$base_url <- NULL
 the$api_key <- NULL
 the$timezone <- "UTC"
 the$cache_dir <- NULL
+the$deal_field_registry <- NULL
+the$deal_field_registry_time <- NULL
+the$contact_field_registry <- NULL
+the$contact_field_registry_time <- NULL
 
 #' Authenticate with ActiveCampaign
 #'

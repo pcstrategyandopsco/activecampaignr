@@ -5,9 +5,17 @@ NULL
 
 #' List Deal Custom Field Definitions
 #'
-#' Returns the field definitions (metadata), not the values.
+#' Returns the field definitions (metadata), not the values. Each row
+#' contains a field's `id`, `field_label`, and `field_type`.
 #'
-#' @return A tibble with columns: id, title, type, etc.
+#' To look up field IDs by name (e.g., for use in [ac_update_deal()]),
+#' use [ac_deal_field_ids()] which builds a cached, named registry from
+#' these definitions.
+#'
+#' @return A tibble with columns: id, field_label, field_type, etc.
+#' @seealso [ac_deal_field_ids()] for a cached name-to-ID registry,
+#'   [ac_deal_custom_field_values()] for raw field values,
+#'   [ac_deal_custom_fields_wide()] for pivoted values per deal.
 #' @export
 ac_deal_custom_fields <- function() {
   ac_paginate("dealCustomFieldMeta", "dealCustomFieldMeta")
@@ -20,6 +28,9 @@ ac_deal_custom_fields <- function() {
 #'
 #' @param deal_id Optional deal ID(s) to filter by
 #' @return A tibble with columns: id, deal_id, custom_field_meta_id, custom_field_datum_value
+#' @seealso [ac_deal_custom_fields()] for field definitions,
+#'   [ac_deal_custom_fields_wide()] for pivoted wide format,
+#'   [ac_deal_field_ids()] for looking up field IDs by name.
 #' @export
 ac_deal_custom_field_values <- function(deal_id = NULL) {
   query <- list()
@@ -37,6 +48,10 @@ ac_deal_custom_field_values <- function(deal_id = NULL) {
 #'
 #' @param deal_id Optional deal ID(s) to filter by
 #' @return A tibble with `deal_id` + one column per custom field
+#' @seealso [ac_deal_custom_fields()] for field definitions,
+#'   [ac_deal_custom_field_values()] for long-format values,
+#'   [ac_deal_field_ids()] for looking up field IDs by name when
+#'   writing values back via [ac_update_deal()].
 #' @export
 #' @examples
 #' \dontrun{
@@ -111,4 +126,78 @@ ac_deal_custom_fields_wide <- function(deal_id = NULL) {
 
   # Clean column names
   janitor::clean_names(wide)
+}
+
+#' Deal Custom Field ID Registry
+#'
+#' Returns a cached registry mapping clean field names to their IDs and
+#' types. Built from [ac_deal_custom_fields()] on first call, then served
+#' from memory until `ttl` expires. Use `cdf$field_name` to look up a
+#' field ID by name (tab-completable in RStudio), or [ac_field_id()] for
+#' validated lookups with type checking.
+#'
+#' Each entry stores both the field `id` and `type` (e.g., `"text"`,
+#' `"date"`, `"currency"`). The `$` operator returns just the ID for
+#' convenience. Access the full entry via `cdf[["field_name"]]` to see
+#' both `$id` and `$type`.
+#'
+#' @param ttl Cache lifetime in minutes (default: 60)
+#' @param force If `TRUE`, bypass cache and re-fetch from API
+#' @return An `ac_field_registry` object (named list of
+#'   `list(id, type)` entries)
+#' @seealso [ac_field_id()] for validated lookups with type checking,
+#'   [ac_deal_custom_fields()] for the raw field definitions tibble,
+#'   [ac_deal_custom_fields_wide()] for reading field values,
+#'   [ac_update_deal()] for writing field values,
+#'   [ac_contact_field_ids()] for the contact equivalent.
+#' @export
+#' @examples
+#' \dontrun{
+#' ac_auth("https://yours.api-us1.com", "your-key")
+#'
+#' # Get deal custom field registry (fetches on first call, cached after)
+#' cdf <- ac_deal_field_ids()
+#' cdf$source          # "42" (just the ID)
+#' cdf$expected_close   # "17"
+#'
+#' # See field type
+#' cdf[["source"]]$type  # "text"
+#'
+#' # Use in deal update
+#' ac_update_deal("123", fields = list(
+#'   list(customFieldId = cdf$source, fieldValue = "Google Ads"),
+#'   list(customFieldId = cdf$expected_close, fieldValue = "2026-06-01")
+#' ))
+#'
+#' # Safe lookup with type validation
+#' ac_update_deal("123", fields = list(
+#'   list(
+#'     customFieldId = ac_field_id(cdf, "expected_close", "2026-06-01"),
+#'     fieldValue = "2026-06-01"
+#'   )
+#' ))
+#'
+#' # Force refresh after field changes in AC admin
+#' cdf <- ac_deal_field_ids(force = TRUE)
+#'
+#' # See all available fields with types
+#' print(cdf)
+#' }
+ac_deal_field_ids <- function(ttl = 60, force = FALSE) {
+  ac_check_auth()
+
+  if (!force && !is.null(the$deal_field_registry) &&
+      !is.null(the$deal_field_registry_time) &&
+      difftime(Sys.time(), the$deal_field_registry_time, units = "mins") < ttl) {
+    return(the$deal_field_registry)
+  }
+
+  cli::cli_inform("Fetching deal custom field definitions...")
+  fields <- ac_deal_custom_fields()
+
+  registry <- ac_build_field_registry(fields, "Deal")
+  the$deal_field_registry <- registry
+  the$deal_field_registry_time <- Sys.time()
+
+  registry
 }

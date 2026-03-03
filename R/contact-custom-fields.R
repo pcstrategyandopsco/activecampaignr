@@ -5,7 +5,16 @@ NULL
 
 #' List Contact Custom Field Definitions
 #'
+#' Returns the field definitions (metadata), not the values. Each row
+#' contains a field's `id`, `title`, and `type`.
+#'
+#' To look up field IDs by name (e.g., for use in [ac_update_contact()]),
+#' use [ac_contact_field_ids()] which builds a cached, named registry
+#' from these definitions.
+#'
 #' @return A tibble of field definitions
+#' @seealso [ac_contact_field_ids()] for a cached name-to-ID registry,
+#'   [ac_contact_custom_fields_wide()] for pivoted values per contact.
 #' @export
 ac_contact_custom_fields <- function() {
   ac_paginate("fields", "fields")
@@ -15,6 +24,9 @@ ac_contact_custom_fields <- function() {
 #'
 #' @param contact_id Optional contact ID(s) to filter by
 #' @return A tibble with `contact_id` + one column per custom field
+#' @seealso [ac_contact_custom_fields()] for field definitions,
+#'   [ac_contact_field_ids()] for looking up field IDs by name when
+#'   writing values back via [ac_update_contact()].
 #' @export
 ac_contact_custom_fields_wide <- function(contact_id = NULL) {
   query <- list()
@@ -67,4 +79,62 @@ ac_contact_custom_fields_wide <- function(contact_id = NULL) {
     dplyr::rename(contact_id = ".contact_id")
 
   janitor::clean_names(wide)
+}
+
+#' Contact Custom Field ID Registry
+#'
+#' Returns a cached registry mapping clean field names to their IDs and
+#' types. Built from [ac_contact_custom_fields()] on first call, then
+#' served from memory until `ttl` expires. Use `ccf$field_name` to look
+#' up a field ID by name (tab-completable in RStudio), or [ac_field_id()]
+#' for validated lookups with type checking.
+#'
+#' Each entry stores both the field `id` and `type`. The `$` operator
+#' returns just the ID for convenience. Access the full entry via
+#' `ccf[["field_name"]]` to see both `$id` and `$type`.
+#'
+#' @param ttl Cache lifetime in minutes (default: 60)
+#' @param force If `TRUE`, bypass cache and re-fetch from API
+#' @return An `ac_field_registry` object (named list of
+#'   `list(id, type)` entries)
+#' @seealso [ac_field_id()] for validated lookups with type checking,
+#'   [ac_contact_custom_fields()] for the raw field definitions tibble,
+#'   [ac_contact_custom_fields_wide()] for reading field values,
+#'   [ac_update_contact()] for writing field values,
+#'   [ac_deal_field_ids()] for the deal equivalent.
+#' @export
+#' @examples
+#' \dontrun{
+#' ac_auth("https://yours.api-us1.com", "your-key")
+#'
+#' # Get contact custom field registry
+#' ccf <- ac_contact_field_ids()
+#' ccf$company_size  # "8"
+#'
+#' # See field type
+#' ccf[["company_size"]]$type  # "dropdown"
+#'
+#' # Force refresh after field changes in AC admin
+#' ccf <- ac_contact_field_ids(force = TRUE)
+#'
+#' # See all available fields with types
+#' print(ccf)
+#' }
+ac_contact_field_ids <- function(ttl = 60, force = FALSE) {
+  ac_check_auth()
+
+  if (!force && !is.null(the$contact_field_registry) &&
+      !is.null(the$contact_field_registry_time) &&
+      difftime(Sys.time(), the$contact_field_registry_time, units = "mins") < ttl) {
+    return(the$contact_field_registry)
+  }
+
+  cli::cli_inform("Fetching contact custom field definitions...")
+  fields <- ac_contact_custom_fields()
+
+  registry <- ac_build_field_registry(fields, "Contact")
+  the$contact_field_registry <- registry
+  the$contact_field_registry_time <- Sys.time()
+
+  registry
 }
