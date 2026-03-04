@@ -22,6 +22,7 @@ Imports:
     glue,
     httr2,
     janitor,
+    lubridate,
     purrr,
     rlang,
     tibble,

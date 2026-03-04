@@ -171,7 +171,7 @@ ac_coerce_types <- function(df) {
 
   for (col in date_cols) {
     df[[col]] <- tryCatch(
-      as.POSIXct(df[[col]], tz = tz),
+      lubridate::ymd_hms(df[[col]], tz = tz, quiet = TRUE),
       error = function(e) df[[col]]
     )
   }

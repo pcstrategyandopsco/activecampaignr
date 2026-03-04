@@ -63,6 +63,20 @@ test_that("ac_coerce_types converts date columns", {
   expect_s3_class(result$mdate, "POSIXct")
 })
 
+test_that("ac_coerce_types parses ISO 8601 offset dates correctly", {
+  df <- tibble::tibble(
+    id = "1",
+    cdate = "2020-09-15T19:03:30-05:00",
+    mdate = "2025-02-20T14:30:00-05:00"
+  )
+  result <- activecampaignr:::ac_coerce_types(df)
+  expect_s3_class(result$cdate, "POSIXct")
+  expect_s3_class(result$mdate, "POSIXct")
+  # Minutes must survive parsing (proves time component not dropped)
+  expect_equal(as.integer(format(result$cdate, "%M")), 3L)
+  expect_equal(as.integer(format(result$mdate, "%M")), 30L)
+})
+
 test_that("ac_perform wraps HTTP errors with AC message", {
   # Simulate an httr2 HTTP error with an AC JSON response body
   local_mocked_bindings(
