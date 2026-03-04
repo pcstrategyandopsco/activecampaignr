@@ -3,6 +3,48 @@
 #' @description RDS-based caching with TTL and incremental merge support.
 NULL
 
+# Bump when: column types change, columns added/removed/renamed, parsing logic
+# changes (e.g. date coercion). Don't bump for: new API endpoints, bug fixes
+# that don't affect cached data shape.
+CACHE_SCHEMA_VERSION <- 2L
+
+#' Read a Versioned Cache File
+#'
+#' Reads an RDS file and unwraps the versioned envelope. Returns `NULL` if the
+#' file is legacy (raw tibble), has a mismatched schema version, or doesn't exist.
+#'
+#' @param path File path to the RDS cache file
+#' @return The cached data (tibble), or `NULL` if invalid/missing
+#' @keywords internal
+ac_cache_read <- function(path) {
+  if (!file.exists(path)) return(NULL)
+
+  obj <- tryCatch(readRDS(path), error = function(e) NULL)
+  if (is.null(obj)) return(NULL)
+
+  # Must be an envelope list with matching version
+
+  if (is.list(obj) && !is.data.frame(obj) &&
+      identical(obj$schema_version, CACHE_SCHEMA_VERSION)) {
+    return(obj$data)
+  }
+
+  # Legacy (raw tibble) or wrong version — invalidate
+  NULL
+}
+
+#' Write a Versioned Cache File
+#'
+#' Wraps data in a versioned envelope and saves as RDS.
+#'
+#' @param data The data to cache (typically a tibble)
+#' @param path File path to write
+#' @keywords internal
+ac_cache_write <- function(data, path) {
+  envelope <- list(schema_version = CACHE_SCHEMA_VERSION, data = data)
+  saveRDS(envelope, path)
+}
+
 #' Cache-or-Fetch Wrapper
 #'
 #' Returns cached data if fresh (within TTL), otherwise calls `fn` and
@@ -23,15 +65,20 @@ ac_cache <- function(key, fn, ttl_minutes = 10, force = FALSE) {
     age_min <- as.numeric(difftime(Sys.time(), file.info(path)$mtime,
                                    units = "mins"))
     if (age_min < ttl_minutes) {
-      cli::cli_alert_info("{key}: using cache ({round(age_min, 1)} min old)")
-      return(readRDS(path))
+      cached <- ac_cache_read(path)
+      if (!is.null(cached)) {
+        cli::cli_alert_info("{key}: using cache ({round(age_min, 1)} min old)")
+        return(cached)
+      }
+      # Version mismatch — fall through to re-fetch
+      cli::cli_alert_info("{key}: cache schema outdated, re-fetching")
     }
   }
 
   result <- fn()
 
   if (tibble::is_tibble(result) || is.data.frame(result)) {
-    saveRDS(result, path)
+    ac_cache_write(result, path)
   }
 
   result
@@ -104,8 +151,8 @@ ac_cache_status <- function() {
   if (!dir.exists(dir)) {
     cli::cli_alert_info("No cache directory found")
     return(tibble::tibble(
-      key = character(), rows = integer(), age_minutes = double(),
-      size_kb = double(), path = character()
+      key = character(), rows = integer(), schema = character(),
+      age_minutes = double(), size_kb = double(), path = character()
     ))
   }
 
@@ -113,19 +160,30 @@ ac_cache_status <- function() {
   if (length(files) == 0) {
     cli::cli_alert_info("Cache is empty")
     return(tibble::tibble(
-      key = character(), rows = integer(), age_minutes = double(),
-      size_kb = double(), path = character()
+      key = character(), rows = integer(), schema = character(),
+      age_minutes = double(), size_kb = double(), path = character()
     ))
   }
 
   purrr::map_dfr(files, function(f) {
     info <- file.info(f)
-    data <- tryCatch(readRDS(f), error = function(e) NULL)
+    obj <- tryCatch(readRDS(f), error = function(e) NULL)
+
+    # Unwrap envelope or detect legacy
+    if (is.list(obj) && !is.data.frame(obj) && !is.null(obj$schema_version)) {
+      schema <- as.character(obj$schema_version)
+      data <- obj$data
+    } else {
+      schema <- "legacy"
+      data <- obj
+    }
+
     rows <- if (is.data.frame(data)) nrow(data) else NA_integer_
 
     tibble::tibble(
       key = tools::file_path_sans_ext(basename(f)),
       rows = rows,
+      schema = schema,
       age_minutes = round(as.numeric(
         difftime(Sys.time(), info$mtime, units = "mins")
       ), 1),

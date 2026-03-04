@@ -45,17 +45,23 @@ ac_sync_deals <- function(lookback_days = 5, ttl_minutes = 10,
           "Deals: cache fresh ({round(age_min, 1)} min old)"
         ))
       }
-      cli::cli_alert_info("Deals cache is fresh ({round(age_min, 1)} min old)")
-      result <- list(deals = readRDS(deals_path))
-      if (include_custom_fields && file.exists(cf_path)) {
-        result$custom_fields <- readRDS(cf_path)
+      cached_deals <- ac_cache_read(deals_path)
+      if (!is.null(cached_deals)) {
+        cli::cli_alert_info("Deals cache is fresh ({round(age_min, 1)} min old)")
+        result <- list(deals = cached_deals)
+        if (include_custom_fields && file.exists(cf_path)) {
+          cached_cf <- ac_cache_read(cf_path)
+          if (!is.null(cached_cf)) result$custom_fields <- cached_cf
+        }
+        return(result)
       }
-      return(result)
+      # Version mismatch — fall through to re-fetch
+      cli::cli_alert_info("Deals cache schema outdated, re-fetching")
     }
   }
 
-  # Load stored data
-  stored <- if (file.exists(deals_path)) readRDS(deals_path) else tibble::tibble()
+  # Load stored data (returns NULL if legacy/wrong version)
+  stored <- ac_cache_read(deals_path) %||% tibble::tibble()
 
   # Decide strategy
   if (force || nrow(stored) == 0) {
@@ -75,7 +81,7 @@ ac_sync_deals <- function(lookback_days = 5, ttl_minutes = 10,
   }
 
   # Save
-  saveRDS(deals, deals_path)
+  ac_cache_write(deals, deals_path)
   cli::cli_alert_success("Synced {nrow(deals)} deals")
 
   result <- list(deals = deals)
@@ -84,7 +90,7 @@ ac_sync_deals <- function(lookback_days = 5, ttl_minutes = 10,
   if (include_custom_fields) {
     if (!is.null(.progress)) .progress(message = "Deals: fetching custom fields...")
     cf <- ac_deal_custom_fields_wide()
-    if (nrow(cf) > 0) saveRDS(cf, cf_path)
+    if (nrow(cf) > 0) ac_cache_write(cf, cf_path)
     result$custom_fields <- cf
   }
 
@@ -116,12 +122,17 @@ ac_sync_contacts <- function(lookback_days = 5, ttl_minutes = 10,
           "Contacts: cache fresh ({round(age_min, 1)} min old)"
         ))
       }
-      cli::cli_alert_info("Contacts cache is fresh ({round(age_min, 1)} min old)")
-      return(readRDS(contacts_path))
+      cached_contacts <- ac_cache_read(contacts_path)
+      if (!is.null(cached_contacts)) {
+        cli::cli_alert_info("Contacts cache is fresh ({round(age_min, 1)} min old)")
+        return(cached_contacts)
+      }
+      # Version mismatch — fall through to re-fetch
+      cli::cli_alert_info("Contacts cache schema outdated, re-fetching")
     }
   }
 
-  stored <- if (file.exists(contacts_path)) readRDS(contacts_path) else tibble::tibble()
+  stored <- ac_cache_read(contacts_path) %||% tibble::tibble()
 
   if (force || nrow(stored) == 0) {
     if (!is.null(.progress)) .progress(message = "Contacts: full sync...")
@@ -139,7 +150,7 @@ ac_sync_contacts <- function(lookback_days = 5, ttl_minutes = 10,
     contacts <- ac_merge_records(stored, modified, id_col = "id")
   }
 
-  saveRDS(contacts, contacts_path)
+  ac_cache_write(contacts, contacts_path)
   cli::cli_alert_success("Synced {nrow(contacts)} contacts")
 
   contacts
