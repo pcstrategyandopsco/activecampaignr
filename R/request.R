@@ -141,8 +141,16 @@ ac_parse_records <- function(records) {
   # Each record is a named list; bind into tibble
 
   df <- purrr::map_dfr(records, function(rec) {
-    # Flatten: drop nested lists/NULLs, keep scalars
+    # Flatten: drop NULLs, collapse list values (e.g. checkbox fields),
+    # then keep scalars
     rec <- purrr::compact(rec)
+    rec <- purrr::map(rec, function(x) {
+      if (is.list(x) && all(vapply(x, is.atomic, logical(1)))) {
+        paste(unlist(x), collapse = "||")
+      } else {
+        x
+      }
+    })
     scalars <- purrr::keep(rec, ~ is.atomic(.) && length(.) == 1)
     tibble::as_tibble(scalars)
   })

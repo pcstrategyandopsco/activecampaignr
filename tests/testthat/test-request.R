@@ -77,6 +77,38 @@ test_that("ac_coerce_types parses ISO 8601 offset dates correctly", {
   expect_equal(as.integer(format(result$mdate, "%M")), 30L)
 })
 
+test_that("ac_parse_records collapses list-valued fields (checkbox/multi-select)", {
+  records <- list(
+    list(id = "1", title = "Deal A", fieldValue = list("No Response")),
+    list(id = "2", title = "Deal B", fieldValue = list("Duplicate", "No Response")),
+    list(id = "3", title = "Deal C", fieldValue = "Plain string")
+  )
+
+  result <- activecampaignr:::ac_parse_records(records)
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_true("field_value" %in% names(result))
+  # Single checkbox value: no delimiter
+
+  expect_equal(result$field_value[1], "No Response")
+  # Multiple selections: collapsed with ||
+
+  expect_equal(result$field_value[2], "Duplicate||No Response")
+  # Plain string passes through unchanged
+  expect_equal(result$field_value[3], "Plain string")
+})
+
+test_that("ac_parse_records drops deeply nested non-atomic lists", {
+  records <- list(
+    list(id = "1", title = "Deal A", nested = list(list(a = 1, b = 2)))
+  )
+
+  result <- activecampaignr:::ac_parse_records(records)
+  # The nested list contains a non-atomic child (a list), so it should be dropped
+
+  expect_false("nested" %in% names(result))
+})
+
 test_that("ac_perform wraps HTTP errors with AC message", {
   # Simulate an httr2 HTTP error with an AC JSON response body
   local_mocked_bindings(
