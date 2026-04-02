@@ -33,12 +33,29 @@ ac_deal_custom_fields <- function() {
 #'   [ac_deal_field_ids()] for looking up field IDs by name.
 #' @export
 ac_deal_custom_field_values <- function(deal_id = NULL) {
-  query <- list()
-  if (!is.null(deal_id)) {
-    query[["filters[dealId]"]] <- paste0(deal_id, collapse = ",")
+  if (is.null(deal_id)) {
+    return(ac_paginate("dealCustomFieldData", "dealCustomFieldData"))
   }
 
-  ac_paginate("dealCustomFieldData", "dealCustomFieldData", query = query)
+  deal_id <- as.character(deal_id)
+
+  if (length(deal_id) > 1) {
+    cli::cli_warn(c(
+      "!" = "ActiveCampaign API does not support filtering by multiple deal IDs
+             in a single request.",
+      "i" = "Querying {length(deal_id)} deal{?s} individually."
+    ))
+  }
+
+  results <- lapply(deal_id, function(did) {
+    query <- list("filters[dealId]" = did)
+    ac_paginate("dealCustomFieldData", "dealCustomFieldData", query = query)
+  })
+  out <- dplyr::bind_rows(results)
+  if (nrow(out) > 0 && "id" %in% names(out)) {
+    out <- dplyr::distinct(out, .data$id, .keep_all = TRUE)
+  }
+  out
 }
 
 #' Get Deal Custom Fields in Wide Format
